@@ -1,12 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Todo & Calendar</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>To Do List</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Hello, world!</h1>
+  <div class="sidebar">
+    <button>+</button>
+    <div class="icon">⭐</div>
+    <div class="icon">📅</div>
+    <div class="icon">🏷️</div>
+    <div class="icon">🏷️</div>
+  </div>
+
+  <div class="main">
+    <div class="header-card">
+      <h1>To do list</h1>
+      <div class="subtitle">Subtitle</div>
+      <div class="buttons">
+        <button>📌 Add to my itinerary</button>
+        <button>🚶 12 mins from hotel</button>
+      </div>
+    </div>
+
+    <div class="input-section">
+      <input type="text" id="todo-input" placeholder="Add a task..." />
+      <input type="date" id="todo-date" />
+
+      <select id="todo-category">
+        <option value="">Category</option>
+        <option value="📚 Study">📚 Study</option>
+        <option value="🧳 Travel">🧳 Travel</option>
+        <option value="🛒 Shopping">🛒 Shopping</option>
+        <option value="💼 Work">💼 Work</option>
+      </select>
+
+      <button onclick="addTodo()">Add</button>
+    </div>
+
+    <ul id="todo-list"></ul>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
