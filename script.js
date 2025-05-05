@@ -20,6 +20,7 @@ function getToday() {
     const list = document.getElementById("todo-list");
   
     const li = document.createElement("li");
+    li.dataset.category = categoryValue;
     li.dataset.date = dateValue;
   
     const left = document.createElement("div");
@@ -30,6 +31,8 @@ function getToday() {
     checkbox.addEventListener("change", () => {
       li.classList.toggle("completed");
     });
+    
+
 
     const pinBtn = document.createElement("button");
     pinBtn.textContent = "📌";
@@ -73,7 +76,6 @@ function getToday() {
     }
     
     
-
   
     const span = document.createElement("span");
     span.textContent = value;
@@ -99,7 +101,7 @@ function getToday() {
       left.appendChild(categorySpan);
     }
   
-    
+
     const editBtn = document.createElement("button");
     editBtn.textContent = "✏️";
     editBtn.style.border = "none";
@@ -273,6 +275,22 @@ function getToday() {
     }
   });  
 
+  const categoryFilterSelect = document.getElementById("category-edit-select");
+
+    categoryFilterSelect.addEventListener("change", () => {
+      const selectedCategory = categoryFilterSelect.value;
+      const allTodos = document.querySelectorAll("#todo-list li");
+
+      allTodos.forEach(li => {
+        const todoCategory = li.dataset.category || "";
+        if (!selectedCategory || todoCategory === selectedCategory) {
+          li.style.display = "flex"; // 보여줌
+        } else {
+          li.style.display = "none"; // 숨김
+      }
+    });
+  });
+
   // 사이드바 아이콘 클릭 이벤트 연결
   const icons = document.querySelectorAll(".sidebar .icon");
 
@@ -307,3 +325,24 @@ function getToday() {
     const btn = document.getElementById("toggle-completed");
     btn.textContent = showCompleted ? "📌 Hide" : "📌 Show All";
   });
+
+  window.addEventListener("DOMContentLoaded", () => {
+    const categoryFilterSelect = document.getElementById("category-edit-select");
+  
+    if (categoryFilterSelect) {
+      categoryFilterSelect.addEventListener("change", () => {
+        const selectedCategory = categoryFilterSelect.value;
+        const allTodos = document.querySelectorAll("#todo-list li");
+  
+        allTodos.forEach(li => {
+          const todoCategory = li.dataset.category || "";
+          if (!selectedCategory || todoCategory === selectedCategory) {
+            li.style.display = "flex";
+          } else {
+            li.style.display = "none";
+          }
+        });
+      });
+    }
+  });
+  
