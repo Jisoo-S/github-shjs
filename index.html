@@ -15,7 +15,7 @@
     <div class="icon" id="todo-icon">⭐</div>
     <div class="icon" id="calendar-icon">📅</div>
     <div class="icon" id="category-icon">🏷️</div>
-    <div class="icon">👍</div>
+    <div class="icon" id="friends-icon">👍</div>
   </div>
   
 
@@ -72,34 +72,113 @@
       </select>
     </div>
   </div>
+
+ <!-- Friends view -->
+ <div id="friends-view" style="display: none; padding: 20px; margin-left: 100px;">
+  <h2 style="font-size: 28px;">Login to Continue</h2>
+  <div id="login-section">
+    <h3>로그인</h3>
+    <button id="google-login">구글 계정으로 로그인</button>
+  </div>
+  
+  <div id="user-info" style="display: none;">
+    <p><strong id="user-name"></strong>님 환영합니다!</p>
+    <button id="logout-btn">로그아웃</button>
+  </div>
+</div>
   
   <script>
     const todoMain = document.querySelector(".main");
     const calendarView = document.getElementById("calendar-view");
     const categoryView = document.getElementById("category-view");
+    const friendsView = document.getElementById("friends-view");
   
     const todoIcon = document.getElementById("todo-icon");
     const calendarIcon = document.getElementById("calendar-icon");
     const categoryIcon = document.getElementById("category-icon");
+    const friendsIcon = document.getElementById("friends-icon");
   
     todoIcon.addEventListener("click", () => {
       todoMain.style.display = "block";
       calendarView.style.display = "none";
       categoryView.style.display = "none";
+      friendsView.style.display = "none";
     });
   
     calendarIcon.addEventListener("click", () => {
       todoMain.style.display = "none";
       calendarView.style.display = "block";
       categoryView.style.display = "none";
+      friendsView.style.display = "none";
     });
   
     categoryIcon.addEventListener("click", () => {
       todoMain.style.display = "none";
       calendarView.style.display = "none";
       categoryView.style.display = "block";
+      friendsView.style.display = "none";
     });
-  </script>  
+
+    friendsIcon.addEventListener("click", () => {
+      todoMain.style.display = "none";
+      calendarView.style.display = "none";
+      categoryView.style.display = "none";
+      friendsView.style.display = "block";
+    });
+
+    </script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyADIDRqmGCI6PGofskRtVnrsTK2xHpoqEw",
+    authDomain: "logintodo-ff777.firebaseapp.com",
+    projectId: "logintodo-ff777",
+    storageBucket: "logintodo-ff777.firebasestorage.app",
+    messagingSenderId: "1067689858137",
+    appId: "1:1067689858137:web:c2de1fdbe937bfb2104d48",
+    measurementId: "G-0SYF713XKM"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const auth = getAuth();
+  const provider = new GoogleAuthProvider();
+
+  const loginBtn = document.getElementById("google-login");
+  const logoutBtn = document.getElementById("logout-btn");
+  const loginSection = document.getElementById("login-section");
+  const userInfo = document.getElementById("user-info");
+  const userName = document.getElementById("user-name");
+
+  loginBtn.addEventListener("click", () => {
+    signInWithPopup(auth, provider)
+      .then((result) => {
+        const user = result.user;
+        userName.innerText = user.displayName;
+        loginSection.style.display = "none";
+        userInfo.style.display = "block";
+      })
+      .catch((error) => {
+        alert("로그인 실패: " + error.message);
+      });
+  });
+
+  logoutBtn.addEventListener("click", () => {
+    signOut(auth).then(() => {
+      loginSection.style.display = "block";
+      userInfo.style.display = "none";
+    });
+  });
+</script>
+
+
+
+<!-- Firebase Auth 추가 -->
+<script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
 
   <script src="script.js"></script>
 </body>
