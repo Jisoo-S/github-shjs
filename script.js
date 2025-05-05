@@ -328,21 +328,62 @@ function getToday() {
 
   window.addEventListener("DOMContentLoaded", () => {
     const categoryFilterSelect = document.getElementById("category-edit-select");
-  
-    if (categoryFilterSelect) {
-      categoryFilterSelect.addEventListener("change", () => {
-        const selectedCategory = categoryFilterSelect.value;
-        const allTodos = document.querySelectorAll("#todo-list li");
-  
-        allTodos.forEach(li => {
-          const todoCategory = li.dataset.category || "";
-          if (!selectedCategory || todoCategory === selectedCategory) {
-            li.style.display = "flex";
-          } else {
-            li.style.display = "none";
-          }
-        });
+    const resultArea = document.getElementById("category-todo-result");
+
+    categoryFilterSelect.addEventListener("change", () => {
+      const selectedCategory = categoryFilterSelect.value;
+      const allTodos = document.querySelectorAll("#todo-list li");
+
+      // 결과 영역 초기화
+      resultArea.innerHTML = "";
+
+      allTodos.forEach(li => {
+        const todoCategory = li.dataset.category || "";
+        if (selectedCategory && todoCategory === selectedCategory) {
+          const clone = li.cloneNode(true);
+          clone.style.marginBottom = "10px";
+          resultArea.appendChild(clone);
+        }
       });
-    }
+
+      // 카테고리만 선택한 경우 투두 화면은 닫고, 결과만 보이게
+      document.querySelector(".main").style.display = "none";
+      document.getElementById("calendar-view").style.display = "none";
+      document.getElementById("category-view").style.display = "block";
+    });
   });
+
+  document.addEventListener("DOMContentLoaded", () => {
+  const categoryFilterSelect = document.getElementById("category-edit-select");
+  const resultArea = document.getElementById("category-todo-result");
+
+  if (!categoryFilterSelect || !resultArea) {
+    console.warn("카테고리 선택창이나 결과 영역이 없습니다.");
+    return;
+  }
+
+  categoryFilterSelect.addEventListener("change", () => {
+    const selectedCategory = categoryFilterSelect.value;
+    const allTodos = document.querySelectorAll("#todo-list li");
+
+    resultArea.innerHTML = ""; // 초기화
+
+    allTodos.forEach(li => {
+      const cat = li.dataset.category || "";
+      if (selectedCategory && cat === selectedCategory) {
+        const copy = li.cloneNode(true);
+        // 버튼 클릭 막기 (복사본이니까)
+        copy.querySelectorAll("button").forEach(btn => btn.disabled = true);
+        copy.querySelectorAll("input").forEach(input => input.disabled = true);
+        resultArea.appendChild(copy);
+      }
+    });
+
+    // 화면 전환: 카테고리 뷰만 열기
+    document.querySelector(".main").style.display = "none";
+    document.getElementById("calendar-view").style.display = "none";
+    document.getElementById("category-view").style.display = "block";
+  });
+});
+
   
