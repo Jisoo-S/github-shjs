@@ -20,6 +20,7 @@ function getToday() {
     const list = document.getElementById("todo-list");
   
     const li = document.createElement("li");
+    li.dataset.date = dateValue;
   
     const left = document.createElement("div");
     left.className = "todo-left";
@@ -29,6 +30,49 @@ function getToday() {
     checkbox.addEventListener("change", () => {
       li.classList.toggle("completed");
     });
+
+    const pinBtn = document.createElement("button");
+    pinBtn.textContent = "📌";
+    pinBtn.style.border = "none";
+    pinBtn.style.background = "none";
+    pinBtn.style.cursor = "pointer";
+
+    // 초기 핀 상태 
+    li.dataset.pinned = "false";
+
+    // 핀 클릭 이벤트
+    pinBtn.addEventListener("click", () => {
+      const isPinned = li.dataset.pinned === "true";
+      li.dataset.pinned = isPinned ? "false" : "true";
+    
+      // 버튼에 강조 효과 주기
+      pinBtn.style.opacity = isPinned ? "0.5" : "1";
+      pinBtn.style.backgroundColor = isPinned ? "transparent" : "#ffe08a";
+      pinBtn.style.borderRadius = "8px";
+      pinBtn.style.padding = "2px 4px";
+
+      pinBtn.classList.toggle("pin-active", !isPinned);
+      pinBtn.classList.toggle("pin-inactive", isPinned);
+    
+      renderList();
+    });
+
+    // ✅ 처음부터 스타일 설정
+    const initiallyPinned = li.dataset.pinned === "true";
+    pinBtn.classList.add(initiallyPinned ? "pin-active" : "pin-inactive");
+
+
+    if (li.dataset.pinned === "true") {
+      pinBtn.style.opacity = "1";
+      pinBtn.style.backgroundColor = "#ffe08a";
+      pinBtn.style.borderRadius = "8px";
+      pinBtn.style.padding = "2px 4px";
+    } else {
+      pinBtn.style.opacity = "0.5";
+    }
+    
+    
+
   
     const span = document.createElement("span");
     span.textContent = value;
@@ -71,6 +115,7 @@ function getToday() {
   
     const buttonGroup = document.createElement("div");
     buttonGroup.className = "button-group";
+    buttonGroup.appendChild(pinBtn);  
     buttonGroup.appendChild(editBtn);
     buttonGroup.appendChild(deleteBtn);
   
@@ -85,6 +130,31 @@ function getToday() {
     input.value = "";
     dateInput.value = "";
     categorySelect.value = "";
+
+    renderList();  
+  }
+
+  function renderList() {
+    const list = document.getElementById("todo-list");
+    const items = Array.from(list.children);
+  
+    items.sort((a, b) => {
+      const pinnedA = a.dataset.pinned === "true";
+      const pinnedB = b.dataset.pinned === "true";
+  
+      if (pinnedA !== pinnedB) {
+        // 📌 고정 항목 먼저
+        return pinnedB - pinnedA;
+      }
+  
+      // 날짜 오름차순 정렬
+      const dateA = a.dataset.date || "";
+      const dateB = b.dataset.date || "";
+      return dateA.localeCompare(dateB);
+    });
+  
+    // 정렬된 항목 다시 list에 붙이기
+    items.forEach(item => list.appendChild(item));
   }
   
   function editTodo(li, left, span, checkbox, oldDate, buttonGroup) {
@@ -126,24 +196,31 @@ function getToday() {
       newCategorySelect.appendChild(option);
     });
   
-    const saveBtn = document.createElement("button");
-    saveBtn.textContent = "💾";
-    saveBtn.style.border = "none";
-    saveBtn.style.background = "none";
-    saveBtn.style.cursor = "pointer";
+    // 📌 버튼 유지 + 저장 시 덮어쓰기 위해 기존 ✏️ 버튼을 찾음
+    const editBtn = buttonGroup.querySelector("button:nth-child(2)"); // 📌(1), ✏️(2), 🗑️(3)
+    const originalText = editBtn.textContent;
   
+    // 기존 클릭 이벤트 제거 (안전하게)
+    const cloned = editBtn.cloneNode(true);
+    buttonGroup.replaceChild(cloned, editBtn);
+  
+    // 버튼 텍스트 변경
+    cloned.textContent = "💾";
+  
+    // left에 수정창 붙이기
     left.innerHTML = "";
     left.appendChild(checkbox);
     left.appendChild(newInput);
     left.appendChild(newDateInput);
     left.appendChild(newCategorySelect);
   
-    buttonGroup.replaceChild(saveBtn, buttonGroup.querySelector("button"));
-  
-    saveBtn.addEventListener("click", () => {
+    // 저장 핸들러 등록
+    cloned.addEventListener("click", () => {
       const updatedTitle = newInput.value.trim();
       const selectedDate = newDateInput.value || oldDate;
       const selectedCategory = newCategorySelect.value || "";
+  
+      li.dataset.date = selectedDate;
   
       const updatedSpan = document.createElement("span");
       updatedSpan.textContent = updatedTitle;
@@ -171,19 +248,21 @@ function getToday() {
         left.appendChild(newCategorySpan);
       }
   
-      const newEditBtn = document.createElement("button");
-      newEditBtn.textContent = "✏️";
-      newEditBtn.style.border = "none";
-      newEditBtn.style.background = "none";
-      newEditBtn.style.cursor = "pointer";
+      // 🔁 버튼 다시 ✏️로 되돌리고 edit 기능 복구
+      cloned.textContent = originalText;
+      const newSpan = updatedSpan;
+      cloned.replaceWith(cloned.cloneNode(true)); // clean again
   
-      newEditBtn.addEventListener("click", () => {
-        editTodo(li, left, updatedSpan, checkbox, selectedDate, buttonGroup);
+      const restoredBtn = buttonGroup.querySelector("button:nth-child(2)");
+      restoredBtn.textContent = "✏️";
+      restoredBtn.addEventListener("click", () => {
+        editTodo(li, left, newSpan, checkbox, selectedDate, buttonGroup);
       });
   
-      buttonGroup.replaceChild(newEditBtn, saveBtn);
+      renderList();
     });
-  }
+  }  
+  
   
   // 엔터 키로 할 일 추가
   document.getElementById("todo-input").addEventListener("keyup", function (event) {
@@ -209,4 +288,20 @@ function getToday() {
     document.getElementById("calendar-view").style.display = "block";     // 캘린더 보이기
     const calendarSection = document.querySelector(".calendar-section");
     if (calendarSection) calendarSection.style.display = "none";          // 다른 캘린더 섹션도 숨기기
+  });
+
+  let showCompleted = true;
+
+  document.getElementById("toggle-completed").addEventListener("click", () => {
+    const todos = document.querySelectorAll("#todo-list li.completed");
+
+    showCompleted = !showCompleted;
+
+    todos.forEach(li => {
+      li.style.display = showCompleted ? "flex" : "none";
+    });
+
+    // 버튼 텍스트도 바꿔주면 더 UX 좋아짐!
+    const btn = document.getElementById("toggle-completed");
+    btn.textContent = showCompleted ? "📌 Hide" : "📌 Show All";
   });

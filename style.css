@@ -87,6 +87,22 @@ body {
   gap: 10px;
 }
 
+.pin-active {
+  background-color: #ffe08a;
+  border-radius: 8px;
+  padding: 2px 4px;
+  color: black;
+}
+
+.pin-inactive {
+  background-color: #f2f2f2;
+  border-radius: 8px;
+  padding: 2px 4px;
+}
+
+
+
+
 #todo-input {
   padding: 10px;
   width: 300px;
