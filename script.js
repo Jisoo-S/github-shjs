@@ -57,6 +57,7 @@ function getToday() {
       renderList();
     });
 
+    
     // ✅ 처음부터 스타일 설정
     const initiallyPinned = li.dataset.pinned === "true";
     pinBtn.classList.add(initiallyPinned ? "pin-active" : "pin-inactive");
