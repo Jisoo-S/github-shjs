@@ -132,10 +132,37 @@ body {
 }
 
 #todo-category {
-  padding: 10px;
-  border-radius: 10px;
+  appearance: none;         /* 기본 드롭다운 화살표 제거 */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  background: white url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2210%22%20height%3D%226%22%20viewBox%3D%220%200%2010%206%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M0%200l5%206%205-6z%22%20fill%3D%22%23666%22/%3E%3C/svg%3E") no-repeat right 14px center;
+  background-size: 10px 6px;
+
+  padding-right: 36px;
+  border-radius: 12px;
   border: 1px solid #ccc;
+  font-size: 14px;
+  padding: 8px 12px;
+  width: 170px;
 }
+
+#category-edit-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  background: white url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2210%22%20height%3D%226%22%20viewBox%3D%220%200%2010%206%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M0%200l5%206%205-6z%22%20fill%3D%22%23666%22/%3E%3C/svg%3E") no-repeat right 14px center;
+  background-size: 10px 6px;
+
+  padding-right: 36px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  padding: 8px 12px;
+  width: 170px;
+}
+
 
 li.completed span {
   text-decoration: line-through;
