@@ -328,23 +328,28 @@ function getToday() {
 
   window.addEventListener("DOMContentLoaded", () => {
     const categoryFilterSelect = document.getElementById("category-edit-select");
-  
-    if (categoryFilterSelect) {
-      categoryFilterSelect.addEventListener("change", () => {
-        const selectedCategory = categoryFilterSelect.value;
-        const allTodos = document.querySelectorAll("#todo-list li");
-  
-        allTodos.forEach(li => {
-          const todoCategory = li.dataset.category || "";
-          if (!selectedCategory || todoCategory === selectedCategory) {
-            li.style.display = "flex";
-          } else {
-            li.style.display = "none";
-          }
-        });
+    const resultArea = document.getElementById("category-todo-result");
+
+    categoryFilterSelect.addEventListener("change", () => {
+      const selectedCategory = categoryFilterSelect.value;
+      const allTodos = document.querySelectorAll("#todo-list li");
+
+      // 결과 영역 초기화
+      resultArea.innerHTML = "";
+
+      allTodos.forEach(li => {
+        const todoCategory = li.dataset.category || "";
+        if (selectedCategory && todoCategory === selectedCategory) {
+          const clone = li.cloneNode(true);
+          clone.style.marginBottom = "10px";
+          resultArea.appendChild(clone);
+        }
       });
-    }
+
+      // 카테고리만 선택한 경우 투두 화면은 닫고, 결과만 보이게
+      document.querySelector(".main").style.display = "none";
+      document.getElementById("calendar-view").style.display = "none";
+      document.getElementById("category-view").style.display = "block";
+    });
   });
 
-
-  

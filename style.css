@@ -101,7 +101,6 @@ body {
   padding: 2px 4px;
 }
 
-
 #todo-input {
   padding: 10px;
   width: 300px;
@@ -221,3 +220,4 @@ li.completed span {
 #login-form button:hover {
   background-color: #45a049;
 }
+
