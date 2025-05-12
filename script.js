@@ -402,6 +402,7 @@ addCategoryBtn.addEventListener("click", () => {
 
   const fullCategory = newCategory;
 
+<<<<<<< HEAD
   // 중복 방지
   const exists = [...categorySelect.options].some(opt => opt.value === fullCategory);
   if (exists) {
@@ -513,3 +514,5 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+=======
+>>>>>>> bf9817a8d08e8e5f8f66d9ff87fd526b354b925b
