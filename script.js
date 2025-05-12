@@ -304,6 +304,7 @@ function getToday() {
     document.getElementById("calendar-view").style.display = "none";      // 캘린더 숨기기
     document.getElementById("category-view").style.display = "none";
     document.getElementById("friends-view").style.display = "none";
+
   });
 
 // 📅 아이콘 (캘린더 화면 전환)
@@ -315,6 +316,21 @@ function getToday() {
   });
 
   let showCompleted = true;
+
+  categoryIcon.addEventListener("click", () => {
+    todoMain.style.display = "none";
+    calendarView.style.display = "none";
+    categoryView.style.display = "block";
+    friendsView.style.display = "none";
+  
+    const selectedCategory = document.getElementById("category-edit-select").value;
+    if (selectedCategory) {
+      handleCategoryChange(); // 선택된 항목 다시 보여줌
+    } else {
+      document.getElementById("category-todo-result").innerHTML = ""; // 선택 안 됐으면 초기화
+    }
+  });
+  
 
   document.getElementById("toggle-completed").addEventListener("click", () => {
     const todos = document.querySelectorAll("#todo-list li.completed");
@@ -402,7 +418,6 @@ addCategoryBtn.addEventListener("click", () => {
 
   const fullCategory = newCategory;
 
-<<<<<<< HEAD
   // 중복 방지
   const exists = [...categorySelect.options].some(opt => opt.value === fullCategory);
   if (exists) {
@@ -466,7 +481,7 @@ function handleCategoryChange() {
       const clone = li.cloneNode(true);
       clone.style.marginBottom = "10px";
 
-      // ✅ 버튼 class 기준으로 원본과 동기화
+      // ✅ 버튼 동기화
       const clonedPinBtn = clone.querySelector(".pin-btn");
       const clonedEditBtn = clone.querySelector(".edit-btn");
       const clonedDeleteBtn = clone.querySelector(".delete-btn");
@@ -476,13 +491,22 @@ function handleCategoryChange() {
       const originalDeleteBtn = li.querySelector(".delete-btn");
 
       if (clonedPinBtn && originalPinBtn) {
-        clonedPinBtn.addEventListener("click", () => originalPinBtn.click());
+        clonedPinBtn.addEventListener("click", () => {
+          originalPinBtn.click();
+          handleCategoryChange(); // 즉시 반영
+        });
       }
       if (clonedEditBtn && originalEditBtn) {
-        clonedEditBtn.addEventListener("click", () => originalEditBtn.click());
+        clonedEditBtn.addEventListener("click", () => {
+          originalEditBtn.click();
+          // 편집 후 handleCategoryChange는 editTodo 안에서 호출되므로 여기선 생략 가능
+        });
       }
       if (clonedDeleteBtn && originalDeleteBtn) {
-        clonedDeleteBtn.addEventListener("click", () => originalDeleteBtn.click());
+        clonedDeleteBtn.addEventListener("click", () => {
+          originalDeleteBtn.click();
+          handleCategoryChange(); // 삭제 후 즉시 갱신
+        });
       }
 
       // ✅ 체크박스 동기화
@@ -493,6 +517,7 @@ function handleCategoryChange() {
         cloneCheckbox.addEventListener("change", () => {
           originCheckbox.checked = cloneCheckbox.checked;
           originCheckbox.dispatchEvent(new Event("change"));
+          handleCategoryChange(); // 체크 상태 변경 반영
         });
       }
 
@@ -500,19 +525,8 @@ function handleCategoryChange() {
     }
   });
 
-  // 화면 전환
+  // 뷰 전환
   document.querySelector(".main").style.display = "none";
   document.getElementById("calendar-view").style.display = "none";
   document.getElementById("category-view").style.display = "block";
 }
-
-// ✅ DOM 준비 후 이벤트 연결
-window.addEventListener("DOMContentLoaded", () => {
-  const categoryFilterSelect = document.getElementById("category-edit-select");
-  if (categoryFilterSelect) {
-    categoryFilterSelect.addEventListener("change", handleCategoryChange);
-  }
-});
-
-=======
->>>>>>> bf9817a8d08e8e5f8f66d9ff87fd526b354b925b
