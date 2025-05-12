@@ -36,27 +36,15 @@ function getToday() {
 
     const pinBtn = document.createElement("button");
     pinBtn.textContent = "📌";
-    pinBtn.style.border = "none";
-    pinBtn.style.background = "none";
-    pinBtn.style.cursor = "pointer";
-
-    // 초기 핀 상태 
-    li.dataset.pinned = "false";
+    pinBtn.classList.add("pin-btn");
+    setPinButtonStyle(pinBtn, false);
 
     // 핀 클릭 이벤트
     pinBtn.addEventListener("click", () => {
       const isPinned = li.dataset.pinned === "true";
       li.dataset.pinned = isPinned ? "false" : "true";
     
-      // 버튼에 강조 효과 주기
-      pinBtn.style.opacity = isPinned ? "0.5" : "1";
-      pinBtn.style.backgroundColor = isPinned ? "transparent" : "#ffe08a";
-      pinBtn.style.borderRadius = "8px";
-      pinBtn.style.padding = "2px 4px";
-
-      pinBtn.classList.toggle("pin-active", !isPinned);
-      pinBtn.classList.toggle("pin-inactive", isPinned);
-    
+      setPinButtonStyle(pinBtn, !isPinned); // 스타일 재적용
       renderList();
     });
 
@@ -101,15 +89,17 @@ function getToday() {
       left.appendChild(categorySpan);
     }
   
-
     const editBtn = document.createElement("button");
     editBtn.textContent = "✏️";
+    editBtn.classList.add("edit-btn");
     editBtn.style.border = "none";
     editBtn.style.background = "none";
     editBtn.style.cursor = "pointer";
   
+    
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "🗑️";
+    deleteBtn.classList.add("delete-btn");
     deleteBtn.style.border = "none";
     deleteBtn.style.background = "none";
     deleteBtn.style.cursor = "pointer";
@@ -160,12 +150,25 @@ function getToday() {
     // 정렬된 항목 다시 list에 붙이기
     items.forEach(item => list.appendChild(item));
   }
-  
+
+  function setPinButtonStyle(btn, isPinned) {
+    btn.style.border = "none";
+    btn.style.background = isPinned ? "#ffe08a" : "transparent";
+    btn.style.cursor = "pointer";
+    btn.style.borderRadius = "8px";
+    btn.style.padding = "2px 4px";
+    btn.style.opacity = isPinned ? "1" : "0.5";
+    btn.style.width = "28px";
+    btn.style.height = "28px";
+    btn.style.lineHeight = "24px";
+  }
+
   function editTodo(li, left, span, checkbox, oldDate, buttonGroup) {
     const currentCategorySpan = Array.from(left.children).find(child =>
       child.textContent && (child.textContent.includes("Study") || child.textContent.includes("Travel") || child.textContent.includes("Shopping") || child.textContent.includes("Work"))
     );
-    const oldCategory = currentCategorySpan ? currentCategorySpan.textContent : "";
+
+    const oldCategory = li.dataset.category || "";
   
     const newInput = document.createElement("input");
     newInput.type = "text";
@@ -191,12 +194,9 @@ function getToday() {
     newCategorySelect.style.borderRadius = "10px";
     newCategorySelect.style.border = "1px solid #ccc";
   
-    const categories = ["", "📚 Study", "🧳 Travel", "🛒 Shopping", "💼 Work"];
-    categories.forEach(cat => {
-      const option = document.createElement("option");
-      option.value = cat;
-      option.textContent = cat || "Category";
-      if (cat === oldCategory) option.selected = true;
+    Array.from(document.getElementById("todo-category").options).forEach(opt => {
+      const option = new Option(opt.textContent, opt.value);
+      if (opt.value === oldCategory) option.selected = true;
       newCategorySelect.appendChild(option);
     });
   
@@ -296,10 +296,14 @@ function getToday() {
 
 // ⭐ 아이콘 (To-do 화면 전환)
   icons[0].addEventListener("click", () => {
+    document.querySelectorAll("#todo-list li").forEach(li => {
+      li.style.display = "flex";
+    });
+
     document.querySelector(".main").style.display = "block";               // To-do 보이기
     document.getElementById("calendar-view").style.display = "none";      // 캘린더 숨기기
-    const calendarSection = document.querySelector(".calendar-section");
-    if (calendarSection) calendarSection.style.display = "none";          // 다른 캘린더 섹션도 숨기기
+    document.getElementById("category-view").style.display = "none";
+    document.getElementById("friends-view").style.display = "none";
   });
 
 // 📅 아이콘 (캘린더 화면 전환)
@@ -326,64 +330,186 @@ function getToday() {
     btn.textContent = showCompleted ? "📌 Hide" : "📌 Show All";
   });
 
+  // 이벤트 바인딩만 DOMContentLoaded 안에
   window.addEventListener("DOMContentLoaded", () => {
     const categoryFilterSelect = document.getElementById("category-edit-select");
-    const resultArea = document.getElementById("category-todo-result");
-
-    categoryFilterSelect.addEventListener("change", () => {
-      const selectedCategory = categoryFilterSelect.value;
-      const allTodos = document.querySelectorAll("#todo-list li");
-
-      // 결과 영역 초기화
-      resultArea.innerHTML = "";
-
-      allTodos.forEach(li => {
-        const todoCategory = li.dataset.category || "";
-        if (selectedCategory && todoCategory === selectedCategory) {
-          const clone = li.cloneNode(true);
-          clone.style.marginBottom = "10px";
-          resultArea.appendChild(clone);
-        }
-      });
-
-      // 카테고리만 선택한 경우 투두 화면은 닫고, 결과만 보이게
-      document.querySelector(".main").style.display = "none";
-      document.getElementById("calendar-view").style.display = "none";
-      document.getElementById("category-view").style.display = "block";
-    });
+    if (categoryFilterSelect) {
+      categoryFilterSelect.addEventListener("change", handleCategoryChange);
+    }
   });
 
-  document.addEventListener("DOMContentLoaded", () => {
-  const categoryFilterSelect = document.getElementById("category-edit-select");
-  const resultArea = document.getElementById("category-todo-result");
 
-  if (!categoryFilterSelect || !resultArea) {
-    console.warn("카테고리 선택창이나 결과 영역이 없습니다.");
-    return;
-  }
-
-  categoryFilterSelect.addEventListener("change", () => {
-    const selectedCategory = categoryFilterSelect.value;
+  document.getElementById("category-edit-select").addEventListener("change", () => {
+    const selectedCategory = document.getElementById("category-edit-select").value;
+    const resultArea = document.getElementById("category-todo-result");
     const allTodos = document.querySelectorAll("#todo-list li");
-
-    resultArea.innerHTML = ""; // 초기화
-
+  
+    resultArea.innerHTML = "";
+  
     allTodos.forEach(li => {
-      const cat = li.dataset.category || "";
-      if (selectedCategory && cat === selectedCategory) {
-        const copy = li.cloneNode(true);
-        // 버튼 클릭 막기 (복사본이니까)
-        copy.querySelectorAll("button").forEach(btn => btn.disabled = true);
-        copy.querySelectorAll("input").forEach(input => input.disabled = true);
-        resultArea.appendChild(copy);
+      const todoCategory = li.dataset.category || "";
+      if (selectedCategory && todoCategory === selectedCategory) {
+        const clone = li.cloneNode(true);
+        clone.style.marginBottom = "10px";
+  
+        // ✅ 체크박스 동기화
+        const cloneCheckbox = clone.querySelector("input[type='checkbox']");
+        const originCheckbox = li.querySelector("input[type='checkbox']");
+        if (cloneCheckbox && originCheckbox) {
+          cloneCheckbox.checked = originCheckbox.checked;
+          cloneCheckbox.addEventListener("change", () => {
+            originCheckbox.checked = cloneCheckbox.checked;
+            originCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
+          });
+        }
+  
+        // ✅ 버튼 연결 (클릭 시 원본 버튼 강제 클릭)
+        const clonedButtons = clone.querySelectorAll("button");
+        const originalButtons = li.querySelectorAll("button");
+  
+        clonedButtons.forEach((btn, i) => {
+          const label = btn.textContent.trim(); // 📌 ✏️ 🗑️
+  
+          btn.addEventListener("click", () => {
+            const matchingButton = Array.from(originalButtons).find(b => b.textContent.trim() === label);
+            if (matchingButton) {
+              matchingButton.click();
+            } else {
+              console.warn(`원본 버튼을 찾을 수 없음: ${label}`);
+            }
+          });
+        });
+  
+        resultArea.appendChild(clone);
       }
     });
-
-    // 화면 전환: 카테고리 뷰만 열기
+  
+    // 뷰 전환
     document.querySelector(".main").style.display = "none";
     document.getElementById("calendar-view").style.display = "none";
     document.getElementById("category-view").style.display = "block";
-  });
+  });  
+  
+
+const categorySelect = document.getElementById("todo-category");
+const editSelect = document.getElementById("category-edit-select");
+const addCategoryBtn = document.getElementById("add-category-btn");
+
+addCategoryBtn.addEventListener("click", () => {
+  const newCategory = prompt("추가할 카테고리 이름을 입력하세요:");
+  if (!newCategory) return;
+
+
+  const fullCategory = newCategory;
+
+  // 중복 방지
+  const exists = [...categorySelect.options].some(opt => opt.value === fullCategory);
+  if (exists) {
+    alert("이미 존재하는 카테고리입니다.");
+    return;
+  }
+
+  const option1 = new Option(fullCategory, fullCategory);
+  const option2 = new Option(fullCategory, fullCategory);
+
+  categorySelect.add(option1);
+  editSelect.add(option2);
 });
 
+const deleteCategoryBtn = document.getElementById("delete-category-btn");
+
+deleteCategoryBtn.addEventListener("click", () => {
+  const selected = editSelect.value;
+  if (!selected) {
+    alert("삭제할 카테고리를 선택하세요.");
+    return;
+  }
+
+  if (!confirm(`'${selected}' 카테고리를 정말 삭제할까요?`)) return;
+
+  // select option에서 제거
+  [...editSelect.options].forEach((opt, i) => {
+    if (opt.value === selected) editSelect.remove(i);
+  });
+  [...categorySelect.options].forEach((opt, i) => {
+    if (opt.value === selected) categorySelect.remove(i);
+  });
+
+  // 해당 카테고리의 할 일에서 카테고리 정보 제거
+  const allTodos = document.querySelectorAll("#todo-list li");
+  allTodos.forEach(li => {
+    if (li.dataset.category === selected) {
+      li.dataset.category = "";
+      const catSpan = [...li.querySelectorAll("span")].find(span =>
+        span.textContent === selected
+      );
+      if (catSpan) catSpan.remove();
+    }
+  });
+
+  alert(`'${selected}' 카테고리가 삭제되었습니다.`);
+});
   
+// ✅ 버튼 연동용: pin/edit/delete 버튼에 class 붙이는 부분은 addTodo 안에 이미 있다고 가정
+
+function handleCategoryChange() {
+  const selectedCategory = document.getElementById("category-edit-select").value;
+  const resultArea = document.getElementById("category-todo-result");
+  const allTodos = document.querySelectorAll("#todo-list li");
+
+  resultArea.innerHTML = "";
+
+  allTodos.forEach(li => {
+    const todoCategory = li.dataset.category || "";
+    if (selectedCategory && todoCategory === selectedCategory) {
+      const clone = li.cloneNode(true);
+      clone.style.marginBottom = "10px";
+
+      // ✅ 버튼 class 기준으로 원본과 동기화
+      const clonedPinBtn = clone.querySelector(".pin-btn");
+      const clonedEditBtn = clone.querySelector(".edit-btn");
+      const clonedDeleteBtn = clone.querySelector(".delete-btn");
+
+      const originalPinBtn = li.querySelector(".pin-btn");
+      const originalEditBtn = li.querySelector(".edit-btn");
+      const originalDeleteBtn = li.querySelector(".delete-btn");
+
+      if (clonedPinBtn && originalPinBtn) {
+        clonedPinBtn.addEventListener("click", () => originalPinBtn.click());
+      }
+      if (clonedEditBtn && originalEditBtn) {
+        clonedEditBtn.addEventListener("click", () => originalEditBtn.click());
+      }
+      if (clonedDeleteBtn && originalDeleteBtn) {
+        clonedDeleteBtn.addEventListener("click", () => originalDeleteBtn.click());
+      }
+
+      // ✅ 체크박스 동기화
+      const cloneCheckbox = clone.querySelector("input[type='checkbox']");
+      const originCheckbox = li.querySelector("input[type='checkbox']");
+      if (cloneCheckbox && originCheckbox) {
+        cloneCheckbox.checked = originCheckbox.checked;
+        cloneCheckbox.addEventListener("change", () => {
+          originCheckbox.checked = cloneCheckbox.checked;
+          originCheckbox.dispatchEvent(new Event("change"));
+        });
+      }
+
+      resultArea.appendChild(clone);
+    }
+  });
+
+  // 화면 전환
+  document.querySelector(".main").style.display = "none";
+  document.getElementById("calendar-view").style.display = "none";
+  document.getElementById("category-view").style.display = "block";
+}
+
+// ✅ DOM 준비 후 이벤트 연결
+window.addEventListener("DOMContentLoaded", () => {
+  const categoryFilterSelect = document.getElementById("category-edit-select");
+  if (categoryFilterSelect) {
+    categoryFilterSelect.addEventListener("change", handleCategoryChange);
+  }
+});
+
