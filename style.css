@@ -190,34 +190,163 @@ li.completed span {
   border: 0;
 }
 
+
+/* 공통 li 스타일 (원본 + 복제 포함) */
+.todo-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;        /* 👉 패딩 줄이기 (12px → 8px) */
+  border-radius: 12px;      /* 👉 더 둥글게 */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08); /* 👉 그림자도 살짝 줄임 */
+  background: #fff;
+  margin-bottom: 8px;       /* 👉 항목 간 간격도 살짝 줄임 */
+  min-height: 48px;         /* 👉 전체 높이 축소 (60px → 48px) */
+  font-size: 14px;          /* 👉 폰트 크기 작게 (선택사항) */
+}
+
+
+.todo-item .todo-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+
+.todo-item .button-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+  min-width: 100px;
+  flex-shrink: 0;
+}
+
+/* 로그인 폼 스타일 */
 #login-form {
-  max-width: 300px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 10px;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-#login-form input {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 350px;
   width: 100%;
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 5px;
-  border: 1px solid #ddd;
+  padding: 30px;
+  background-color: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  margin: 40px auto;
 }
 
+/* 입력 필드 스타일 */
+#login-form input {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+/* 버튼 스타일 */
 #login-form button {
-  background-color: #4CAF50;
-  color: white;
+  padding: 12px;
+  border-radius: 12px;
   border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
+  background-color: #ffe08a;
+  color: black;
+  font-weight: bold;
   cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 #login-form button:hover {
-  background-color: #45a049;
+  background-color: #ffd700;
 }
 
+/* 로그인 상태 표시 영역 */
+#user-info {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 14px;
+  color: #555;
+}
 
+/* 반응형 처리 */
+@media (max-width: 500px) {
+  #login-form {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  #login-form input,
+  #login-form button {
+    font-size: 14px;
+    padding: 10px;
+  }
+}
+
+#modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+#custom-modal {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  text-align: center;
+  width: 300px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  animation: fadeIn 0.2s ease;
+}
+
+#modal-input {
+  width: 90%;
+  padding: 10px;
+  margin-top: 10px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+}
+
+.modal-buttons {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-around;
+}
+
+.modal-buttons button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+#modal-confirm {
+  background-color: #ffe08a;
+}
+
+#modal-cancel {
+  background-color: #ddd;
+}
+
+.hidden {
+  display: none;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hidden {
+  display: none !important;
+}

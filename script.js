@@ -163,13 +163,11 @@ function getToday() {
     btn.style.lineHeight = "24px";
   }
 
-  function editTodo(li, left, span, checkbox, oldDate, buttonGroup) {
-    const currentCategorySpan = Array.from(left.children).find(child =>
-      child.textContent && (child.textContent.includes("Study") || child.textContent.includes("Travel") || child.textContent.includes("Shopping") || child.textContent.includes("Work"))
-    );
+  // 🔧 수정 반영 문제 해결된 버전 (span 참조 재사용 제거)
 
+  function editTodo(li, left, span, checkbox, oldDate, buttonGroup) {
     const oldCategory = li.dataset.category || "";
-  
+
     const newInput = document.createElement("input");
     newInput.type = "text";
     newInput.value = span.textContent;
@@ -179,7 +177,7 @@ function getToday() {
     newInput.style.border = "1px solid #ccc";
     newInput.style.width = "200px";
     newInput.style.marginRight = "10px";
-  
+
     const newDateInput = document.createElement("input");
     newDateInput.type = "date";
     newDateInput.value = oldDate;
@@ -187,59 +185,53 @@ function getToday() {
     newDateInput.style.padding = "8px";
     newDateInput.style.borderRadius = "10px";
     newDateInput.style.border = "1px solid #ccc";
-  
+
     const newCategorySelect = document.createElement("select");
     newCategorySelect.style.fontSize = "14px";
     newCategorySelect.style.padding = "8px";
     newCategorySelect.style.borderRadius = "10px";
     newCategorySelect.style.border = "1px solid #ccc";
-  
+
     Array.from(document.getElementById("todo-category").options).forEach(opt => {
       const option = new Option(opt.textContent, opt.value);
       if (opt.value === oldCategory) option.selected = true;
       newCategorySelect.appendChild(option);
     });
-  
-    // 📌 버튼 유지 + 저장 시 덮어쓰기 위해 기존 ✏️ 버튼을 찾음
-    const editBtn = buttonGroup.querySelector("button:nth-child(2)"); // 📌(1), ✏️(2), 🗑️(3)
+
+    const editBtn = buttonGroup.querySelector(".edit-btn");
     const originalText = editBtn.textContent;
-  
-    // 기존 클릭 이벤트 제거 (안전하게)
     const cloned = editBtn.cloneNode(true);
     buttonGroup.replaceChild(cloned, editBtn);
-  
-    // 버튼 텍스트 변경
     cloned.textContent = "💾";
-  
-    // left에 수정창 붙이기
+
     left.innerHTML = "";
     left.appendChild(checkbox);
     left.appendChild(newInput);
     left.appendChild(newDateInput);
     left.appendChild(newCategorySelect);
-  
-    // 저장 핸들러 등록
+
     cloned.addEventListener("click", () => {
       const updatedTitle = newInput.value.trim();
       const selectedDate = newDateInput.value || oldDate;
       const selectedCategory = newCategorySelect.value || "";
-  
+
       li.dataset.date = selectedDate;
-  
-      const updatedSpan = document.createElement("span");
-      updatedSpan.textContent = updatedTitle;
-  
+      li.dataset.category = selectedCategory;
+
+      const newSpan = document.createElement("span");
+      newSpan.textContent = updatedTitle;
+
       const updatedDateSpan = document.createElement("span");
       updatedDateSpan.textContent = `📅 ${selectedDate}`;
       updatedDateSpan.style.fontSize = "12px";
       updatedDateSpan.style.marginLeft = "10px";
       updatedDateSpan.style.opacity = "0.6";
-  
+
       left.innerHTML = "";
       left.appendChild(checkbox);
-      left.appendChild(updatedSpan);
+      left.appendChild(newSpan);
       left.appendChild(updatedDateSpan);
-  
+
       if (selectedCategory) {
         const newCategorySpan = document.createElement("span");
         newCategorySpan.textContent = selectedCategory;
@@ -251,21 +243,26 @@ function getToday() {
         newCategorySpan.style.borderRadius = "8px";
         left.appendChild(newCategorySpan);
       }
-  
-      // 🔁 버튼 다시 ✏️로 되돌리고 edit 기능 복구
-      cloned.textContent = originalText;
-      const newSpan = updatedSpan;
-      cloned.replaceWith(cloned.cloneNode(true)); // clean again
-  
-      const restoredBtn = buttonGroup.querySelector("button:nth-child(2)");
+
+      cloned.replaceWith(cloned.cloneNode(true));
+      const restoredBtn = buttonGroup.querySelector(".edit-btn");
       restoredBtn.textContent = "✏️";
       restoredBtn.addEventListener("click", () => {
         editTodo(li, left, newSpan, checkbox, selectedDate, buttonGroup);
       });
-  
+
       renderList();
+
+      const isCategoryViewVisible = document.getElementById("category-view").style.display === "block";
+      if (isCategoryViewVisible) {
+        setTimeout(() => {
+          handleCategoryChange();
+        }, 100);
+      }
     });
-  }  
+  }
+
+  
   
   
   // 엔터 키로 할 일 추가
@@ -356,14 +353,14 @@ function getToday() {
 
 
   document.getElementById("category-edit-select").addEventListener("change", () => {
-    const selectedCategory = document.getElementById("category-edit-select").value;
+    const selectedCategory = document.getElementById("category-edit-select").value.trim();
     const resultArea = document.getElementById("category-todo-result");
     const allTodos = document.querySelectorAll("#todo-list li");
   
     resultArea.innerHTML = "";
   
     allTodos.forEach(li => {
-      const todoCategory = li.dataset.category || "";
+      const todoCategory = (li.dataset.category || "").trim();
       if (selectedCategory && todoCategory === selectedCategory) {
         const clone = li.cloneNode(true);
         clone.style.marginBottom = "10px";
@@ -412,62 +409,66 @@ const editSelect = document.getElementById("category-edit-select");
 const addCategoryBtn = document.getElementById("add-category-btn");
 
 addCategoryBtn.addEventListener("click", () => {
-  const newCategory = prompt("추가할 카테고리 이름을 입력하세요:");
-  if (!newCategory) return;
+  showModal("추가할 카테고리 이름을 입력하세요", true, (value) => {
+    if (!value) return;
 
+    const fullCategory = value;
+    const exists = [...categorySelect.options].some(opt => opt.value === fullCategory);
+    if (exists) {
+      setTimeout(() => {
+        showModal("이미 존재하는 카테고리입니다.", false, () => {});
+      }, 0);
+      return;
+    }
+    
 
-  const fullCategory = newCategory;
-
-  // 중복 방지
-  const exists = [...categorySelect.options].some(opt => opt.value === fullCategory);
-  if (exists) {
-    alert("이미 존재하는 카테고리입니다.");
-    return;
-  }
-
-  const option1 = new Option(fullCategory, fullCategory);
-  const option2 = new Option(fullCategory, fullCategory);
-
-  categorySelect.add(option1);
-  editSelect.add(option2);
+    const option1 = new Option(fullCategory, fullCategory);
+    const option2 = new Option(fullCategory, fullCategory);
+    categorySelect.add(option1);
+    editSelect.add(option2);
+  });
 });
+
+
+
 
 const deleteCategoryBtn = document.getElementById("delete-category-btn");
 
 deleteCategoryBtn.addEventListener("click", () => {
   const selected = editSelect.value;
   if (!selected) {
-    alert("삭제할 카테고리를 선택하세요.");
+    showModal("삭제할 카테고리를 선택하세요.", false, () => {});
     return;
   }
 
-  if (!confirm(`'${selected}' 카테고리를 정말 삭제할까요?`)) return;
+  showModal(`'${selected}'<br> 카테고리를 정말 삭제할까요?`, false, (confirm) => {
+    if (!confirm) return;
 
-  // select option에서 제거
-  [...editSelect.options].forEach((opt, i) => {
-    if (opt.value === selected) editSelect.remove(i);
-  });
-  [...categorySelect.options].forEach((opt, i) => {
-    if (opt.value === selected) categorySelect.remove(i);
-  });
+    [...editSelect.options].forEach((opt, i) => {
+      if (opt.value === selected) editSelect.remove(i);
+    });
+    [...categorySelect.options].forEach((opt, i) => {
+      if (opt.value === selected) categorySelect.remove(i);
+    });
 
-  // 해당 카테고리의 할 일에서 카테고리 정보 제거
-  const allTodos = document.querySelectorAll("#todo-list li");
-  allTodos.forEach(li => {
-    if (li.dataset.category === selected) {
-      li.dataset.category = "";
-      const catSpan = [...li.querySelectorAll("span")].find(span =>
-        span.textContent === selected
-      );
-      if (catSpan) catSpan.remove();
-    }
-  });
+    const allTodos = document.querySelectorAll("#todo-list li");
+    allTodos.forEach(li => {
+      if (li.dataset.category === selected) {
+        li.dataset.category = "";
+        const catSpan = [...li.querySelectorAll("span")].find(span =>
+          span.textContent === selected
+        );
+        if (catSpan) catSpan.remove();
+      }
+    });
 
-  alert(`'${selected}' 카테고리가 삭제되었습니다.`);
+    showModal(`'${selected}'<br>카테고리가 삭제되었습니다.`, false, () => {});
+
+  });
 });
+
   
 // ✅ 버튼 연동용: pin/edit/delete 버튼에 class 붙이는 부분은 addTodo 안에 이미 있다고 가정
-
 function handleCategoryChange() {
   const selectedCategory = document.getElementById("category-edit-select").value;
   const resultArea = document.getElementById("category-todo-result");
@@ -479,9 +480,24 @@ function handleCategoryChange() {
     const todoCategory = li.dataset.category || "";
     if (selectedCategory && todoCategory === selectedCategory) {
       const clone = li.cloneNode(true);
+      clone.classList.add("todo-item");
+
+      // ✅ 복제된 .todo-left 에 클래스가 빠졌을 수 있으니 다시 지정
+      const left = clone.querySelector("div");
+      if (left) {
+        left.className = "todo-left";
+      }
+
+      // ✅ 복제된 버튼 그룹도 클래스 보장
+      const btnGroup = clone.querySelector("div.button-group") || clone.querySelectorAll("div")[1];
+      if (btnGroup) {
+        btnGroup.className = "button-group";
+}
+
+
       clone.style.marginBottom = "10px";
 
-      // ✅ 버튼 동기화
+      // ✅ 버튼 연결용: 복제된 버튼들을 클래스 기준으로 찾기
       const clonedPinBtn = clone.querySelector(".pin-btn");
       const clonedEditBtn = clone.querySelector(".edit-btn");
       const clonedDeleteBtn = clone.querySelector(".delete-btn");
@@ -490,22 +506,32 @@ function handleCategoryChange() {
       const originalEditBtn = li.querySelector(".edit-btn");
       const originalDeleteBtn = li.querySelector(".delete-btn");
 
+      // 📌 핀 버튼 클릭 → 원본 클릭 후 갱신
       if (clonedPinBtn && originalPinBtn) {
         clonedPinBtn.addEventListener("click", () => {
           originalPinBtn.click();
-          handleCategoryChange(); // 즉시 반영
+          handleCategoryChange(); // 고정 상태 다시 반영
         });
       }
+
+      // ✏ 수정 버튼 클릭 → 원본 클릭 후 약간 기다렸다가 갱신
       if (clonedEditBtn && originalEditBtn) {
         clonedEditBtn.addEventListener("click", () => {
           originalEditBtn.click();
-          // 편집 후 handleCategoryChange는 editTodo 안에서 호출되므로 여기선 생략 가능
+      
+          // ✅ 0.2초 뒤 다시 복제해서 갱신
+          setTimeout(() => {
+            handleCategoryChange();
+          }, 200);
         });
       }
+      
+
+      // 🗑 삭제 버튼 클릭 → 원본 클릭 후 갱신
       if (clonedDeleteBtn && originalDeleteBtn) {
         clonedDeleteBtn.addEventListener("click", () => {
           originalDeleteBtn.click();
-          handleCategoryChange(); // 삭제 후 즉시 갱신
+          handleCategoryChange(); // 삭제 반영
         });
       }
 
@@ -517,7 +543,7 @@ function handleCategoryChange() {
         cloneCheckbox.addEventListener("change", () => {
           originCheckbox.checked = cloneCheckbox.checked;
           originCheckbox.dispatchEvent(new Event("change"));
-          handleCategoryChange(); // 체크 상태 변경 반영
+          handleCategoryChange(); // 체크 상태 갱신
         });
       }
 
@@ -530,3 +556,101 @@ function handleCategoryChange() {
   document.getElementById("calendar-view").style.display = "none";
   document.getElementById("category-view").style.display = "block";
 }
+
+// Firebase 초기화
+const firebaseConfig = {
+  apiKey: "AIzaSyADIDRqmGCI6PGofskRtVnrsTK2xHpoqEw",
+  authDomain: "logintodo-ff777.firebaseapp.com",
+  projectId: "logintodo-ff777",
+  storageBucket: "logintodo-ff777.appspot.com",
+  messagingSenderId: "1067689858137",
+  appId: "1:1067689858137:web:c2de1fdbe937bfb2104d48",
+  measurementId: "G-0SYF713XKM"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+// 회원가입
+function signup() {
+  const email = document.getElementById("login-email").value;
+  const password = document.getElementById("login-password").value;
+  auth.createUserWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      alert("회원가입 성공!");
+    })
+    .catch((error) => {
+      alert(error.message);
+    });
+}
+
+// 로그인
+function login() {
+  const email = document.getElementById("login-email").value;
+  const password = document.getElementById("login-password").value;
+  auth.signInWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      alert("로그인 성공!");
+    })
+    .catch((error) => {
+      alert(error.message);
+    });
+}
+ 
+// 로그아웃
+function logout() {
+  auth.signOut().then(() => {
+    alert("로그아웃 완료");
+  });
+}
+
+// 로그인 상태 확인
+auth.onAuthStateChanged((user) => {
+  const userInfo = document.getElementById("user-info");
+  if (user) {
+    userInfo.innerText = `현재 로그인된 사용자: ${user.email}`;
+  } else {
+    userInfo.innerText = "로그인 안됨";
+  }
+});
+
+function showModal(message, withInput = false, callback) {
+  const overlay = document.getElementById("modal-overlay");
+  const msg = document.getElementById("modal-message");
+  const input = document.getElementById("modal-input");
+  const confirmBtn = document.getElementById("modal-confirm");
+  const cancelBtn = document.getElementById("modal-cancel");
+
+  msg.innerHTML = message;
+  input.style.display = withInput ? "block" : "none";
+  input.value = "";
+
+  overlay.classList.remove("hidden");
+
+  const cleanUp = () => {
+    overlay.classList.add("hidden");
+    confirmBtn.onclick = null;
+    cancelBtn.onclick = null;
+  };
+
+  confirmBtn.onclick = () => {
+    const value = withInput ? input.value.trim() : true;
+    cleanUp();
+    callback(value);
+  };
+
+  cancelBtn.onclick = () => {
+    cleanUp();
+    callback(null);
+  };
+
+  // 엔터 키 입력 시 확인 동작 수행
+  document.getElementById("modal-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      const confirmBtn = document.getElementById("modal-confirm");
+      confirmBtn.click();
+    }
+  });
+
+}
+
