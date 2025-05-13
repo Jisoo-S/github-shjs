@@ -571,7 +571,7 @@ function login() {
       alert(error.message);
     });
 }
-
+ 
 // 로그아웃
 function logout() {
   auth.signOut().then(() => {
