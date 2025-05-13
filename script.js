@@ -530,3 +530,61 @@ function handleCategoryChange() {
   document.getElementById("calendar-view").style.display = "none";
   document.getElementById("category-view").style.display = "block";
 }
+
+
+ // Firebase 초기화
+const firebaseConfig = {
+  apiKey: "AIzaSyADIDRqmGCI6PGofskRtVnrsTK2xHpoqEw",
+  authDomain: "logintodo-ff777.firebaseapp.com",
+  projectId: "logintodo-ff777",
+  storageBucket: "logintodo-ff777.appspot.com",
+  messagingSenderId: "1067689858137",
+  appId: "1:1067689858137:web:c2de1fdbe937bfb2104d48",
+  measurementId: "G-0SYF713XKM"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+// 회원가입
+function signup() {
+  const email = document.getElementById("login-email").value;
+  const password = document.getElementById("login-password").value;
+  auth.createUserWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      alert("회원가입 성공!");
+    })
+    .catch((error) => {
+      alert(error.message);
+    });
+}
+
+// 로그인
+function login() {
+  const email = document.getElementById("login-email").value;
+  const password = document.getElementById("login-password").value;
+  auth.signInWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      alert("로그인 성공!");
+    })
+    .catch((error) => {
+      alert(error.message);
+    });
+}
+
+// 로그아웃
+function logout() {
+  auth.signOut().then(() => {
+    alert("로그아웃 완료");
+  });
+}
+
+// 로그인 상태 확인
+auth.onAuthStateChanged((user) => {
+  const userInfo = document.getElementById("user-info");
+  if (user) {
+    userInfo.innerText = `현재 로그인된 사용자: ${user.email}`;
+  } else {
+    userInfo.innerText = "로그인 안됨";
+  }
+});
