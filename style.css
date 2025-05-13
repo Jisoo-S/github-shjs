@@ -190,7 +190,6 @@ li.completed span {
   border: 0;
 }
 
-<<<<<<< HEAD
 
 /* 공통 li 스타일 (원본 + 복제 포함) */
 .todo-item {
@@ -226,8 +225,6 @@ li.completed span {
   flex-shrink: 0;
 }
 
-=======
->>>>>>> e0778fabb1fdf86469a56e7a058d5c1ffcf5e276
 /* 로그인 폼 스타일 */
 #login-form {
   display: flex;
