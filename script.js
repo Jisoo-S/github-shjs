@@ -557,7 +557,12 @@ function handleCategoryChange() {
   document.getElementById("category-view").style.display = "block";
 }
 
+<<<<<<< HEAD
 // Firebase 초기화
+=======
+
+ // Firebase 초기화
+>>>>>>> e0778fabb1fdf86469a56e7a058d5c1ffcf5e276
 const firebaseConfig = {
   apiKey: "AIzaSyADIDRqmGCI6PGofskRtVnrsTK2xHpoqEw",
   authDomain: "logintodo-ff777.firebaseapp.com",
@@ -613,6 +618,7 @@ auth.onAuthStateChanged((user) => {
     userInfo.innerText = "로그인 안됨";
   }
 });
+<<<<<<< HEAD
 
 function showModal(message, withInput = false, callback) {
   const overlay = document.getElementById("modal-overlay");
@@ -654,3 +660,5 @@ function showModal(message, withInput = false, callback) {
 
 }
 
+=======
+>>>>>>> e0778fabb1fdf86469a56e7a058d5c1ffcf5e276
