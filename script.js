@@ -469,93 +469,208 @@ deleteCategoryBtn.addEventListener("click", () => {
 
   
 // ✅ 버튼 연동용: pin/edit/delete 버튼에 class 붙이는 부분은 addTodo 안에 이미 있다고 가정
+// ✅ 수정 기능이 카테고리 뷰에서도 완전히 작동하도록 리팩토링된 버전
+
 function handleCategoryChange() {
-  const selectedCategory = document.getElementById("category-edit-select").value;
+  const selectedCategory = document.getElementById("category-edit-select").value.trim();
   const resultArea = document.getElementById("category-todo-result");
   const allTodos = document.querySelectorAll("#todo-list li");
 
   resultArea.innerHTML = "";
 
-  allTodos.forEach(li => {
-    const todoCategory = li.dataset.category || "";
-    if (selectedCategory && todoCategory === selectedCategory) {
-      const clone = li.cloneNode(true);
+  // 📌 정렬: 핀 고정 먼저, 그 다음 날짜 순
+  const sortedTodos = Array.from(allTodos).sort((a, b) => {
+    const pinnedA = a.dataset.pinned === "true";
+    const pinnedB = b.dataset.pinned === "true";
+    if (pinnedA !== pinnedB) return pinnedB - pinnedA;
+
+    const dateA = a.dataset.date || "";
+    const dateB = b.dataset.date || "";
+    return dateA.localeCompare(dateB);
+  });
+
+  // 이후 기존 로직을 sortedTodos로 돌리기
+  sortedTodos.forEach(originalLi => {
+    const liCategory = (originalLi.dataset.category || "").trim();
+    if (selectedCategory && liCategory === selectedCategory) {
+      // 🔁 여기부터는 기존 클론 및 이벤트 연결 코드 유지
+    }
+  });
+
+  allTodos.forEach(originalLi => {
+    const liCategory = (originalLi.dataset.category || "").trim();
+    if (selectedCategory && liCategory === selectedCategory) {
+      const clone = originalLi.cloneNode(true);
       clone.classList.add("todo-item");
 
-      // ✅ 복제된 .todo-left 에 클래스가 빠졌을 수 있으니 다시 지정
-      const left = clone.querySelector("div");
-      if (left) {
-        left.className = "todo-left";
-      }
+      // ✅ 복제본에 직접 수정 기능을 구현하기 위해 이벤트 전부 재설정
+      const checkbox = clone.querySelector("input[type='checkbox']");
+      const originalCheckbox = originalLi.querySelector("input[type='checkbox']");
+      checkbox.checked = originalCheckbox.checked;
+      checkbox.addEventListener("change", () => {
+        originalCheckbox.checked = checkbox.checked;
+        originalCheckbox.dispatchEvent(new Event("change"));
+      });
 
-      // ✅ 복제된 버튼 그룹도 클래스 보장
-      const btnGroup = clone.querySelector("div.button-group") || clone.querySelectorAll("div")[1];
-      if (btnGroup) {
-        btnGroup.className = "button-group";
-}
+      const editBtn = clone.querySelector(".edit-btn");
+      const deleteBtn = clone.querySelector(".delete-btn");
+      const pinBtn = clone.querySelector(".pin-btn");
+      const left = clone.querySelector(".todo-left");
 
+      deleteBtn.addEventListener("click", () => {
+        originalLi.remove();
+        handleCategoryChange();
+      });
 
-      clone.style.marginBottom = "10px";
+      pinBtn.addEventListener("click", () => {
+        const isPinned = originalLi.dataset.pinned === "true";
+        originalLi.dataset.pinned = isPinned ? "false" : "true";
+        
+        // 원본 버튼에 스타일 적용 (스타일 함수가 있다면 사용)
+        const originalPinBtn = originalLi.querySelector(".pin-btn");
+        if (originalPinBtn) {
+          setPinButtonStyle(originalPinBtn, !isPinned);
+        }
 
-      // ✅ 버튼 연결용: 복제된 버튼들을 클래스 기준으로 찾기
-      const clonedPinBtn = clone.querySelector(".pin-btn");
-      const clonedEditBtn = clone.querySelector(".edit-btn");
-      const clonedDeleteBtn = clone.querySelector(".delete-btn");
+        // 클론 버튼에도 스타일 적용
+        setPinButtonStyle(pinBtn, !isPinned);
 
-      const originalPinBtn = li.querySelector(".pin-btn");
-      const originalEditBtn = li.querySelector(".edit-btn");
-      const originalDeleteBtn = li.querySelector(".delete-btn");
+        handleCategoryChange();
+      });
 
-      // 📌 핀 버튼 클릭 → 원본 클릭 후 갱신
-      if (clonedPinBtn && originalPinBtn) {
-        clonedPinBtn.addEventListener("click", () => {
-          originalPinBtn.click();
-          handleCategoryChange(); // 고정 상태 다시 반영
+      editBtn.addEventListener("click", () => {
+        const span = left.querySelector("span");
+        const oldText = span.textContent;
+        const oldDate = originalLi.dataset.date;
+        const oldCategory = originalLi.dataset.category || "";
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = oldText;
+        
+        const dateInput = document.createElement("input");
+        dateInput.type = "date";
+        dateInput.value = oldDate;
+
+        const categorySelect = document.createElement("select");
+
+        // 텍스트 입력창
+        input.type = "text";
+        input.value = oldText;
+        input.style.fontSize = "14px";
+        input.style.padding = "8px";
+        input.style.borderRadius = "10px";
+        input.style.border = "1px solid #ccc";
+        input.style.width = "200px";
+        input.style.marginRight = "10px";
+
+        // 날짜 입력창
+        dateInput.type = "date";
+        dateInput.value = oldDate;
+        dateInput.style.fontSize = "14px";
+        dateInput.style.padding = "8px";
+        dateInput.style.borderRadius = "10px";
+        dateInput.style.border = "1px solid #ccc";
+        dateInput.style.marginRight = "10px";
+
+        // 카테고리 셀렉트
+        categorySelect.style.fontSize = "14px";
+        categorySelect.style.padding = "8px";
+        categorySelect.style.borderRadius = "10px";
+        categorySelect.style.border = "1px solid #ccc";
+
+        Array.from(document.getElementById("todo-category").options).forEach(opt => {
+          const option = new Option(opt.textContent, opt.value);
+          if (opt.value === oldCategory) option.selected = true;
+          categorySelect.appendChild(option);
         });
-      }
 
-      // ✏ 수정 버튼 클릭 → 원본 클릭 후 약간 기다렸다가 갱신
-      if (clonedEditBtn && originalEditBtn) {
-        clonedEditBtn.addEventListener("click", () => {
-          originalEditBtn.click();
-      
-          // ✅ 0.2초 뒤 다시 복제해서 갱신
-          setTimeout(() => {
-            handleCategoryChange();
-          }, 200);
-        });
-      }
-      
+        left.innerHTML = "";
+        left.appendChild(checkbox);
+        left.appendChild(input);
+        left.appendChild(dateInput);
+        left.appendChild(categorySelect);
 
-      // 🗑 삭제 버튼 클릭 → 원본 클릭 후 갱신
-      if (clonedDeleteBtn && originalDeleteBtn) {
-        clonedDeleteBtn.addEventListener("click", () => {
-          originalDeleteBtn.click();
-          handleCategoryChange(); // 삭제 반영
-        });
-      }
+        editBtn.textContent = "💾";
 
-      // ✅ 체크박스 동기화
-      const cloneCheckbox = clone.querySelector("input[type='checkbox']");
-      const originCheckbox = li.querySelector("input[type='checkbox']");
-      if (cloneCheckbox && originCheckbox) {
-        cloneCheckbox.checked = originCheckbox.checked;
-        cloneCheckbox.addEventListener("change", () => {
-          originCheckbox.checked = cloneCheckbox.checked;
-          originCheckbox.dispatchEvent(new Event("change"));
-          handleCategoryChange(); // 체크 상태 갱신
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            editBtn.click();
+          }
         });
-      }
+        
+        editBtn.onclick = () => {
+          const updatedTitle = input.value.trim();
+          const updatedDate = dateInput.value || oldDate;
+          const updatedCategory = categorySelect.value || "";
+
+          if (!updatedTitle) return;
+
+          // ⛔ 기존 span 하나만 갱신하던 것 → ✅ 전체 구조 갱신
+          const newLeft = document.createElement("div");
+          newLeft.className = "todo-left";
+
+          const newCheckbox = originalLi.querySelector("input[type='checkbox']");
+          newLeft.appendChild(newCheckbox);
+
+          const titleSpan = document.createElement("span");
+          titleSpan.textContent = updatedTitle;
+          newLeft.appendChild(titleSpan);
+
+          const dateSpan = document.createElement("span");
+          dateSpan.textContent = `📅 ${updatedDate}`;
+          dateSpan.style.fontSize = "12px";
+          dateSpan.style.marginLeft = "10px";
+          dateSpan.style.opacity = "0.6";
+          newLeft.appendChild(dateSpan);
+
+          if (updatedCategory) {
+            const categorySpan = document.createElement("span");
+            categorySpan.textContent = updatedCategory;
+            categorySpan.style.fontSize = "12px";
+            categorySpan.style.marginLeft = "10px";
+            categorySpan.style.opacity = "0.8";
+            categorySpan.style.backgroundColor = "#eee";
+            categorySpan.style.padding = "2px 6px";
+            categorySpan.style.borderRadius = "8px";
+            newLeft.appendChild(categorySpan);
+          }
+
+          // 실제 데이터 반영
+          originalLi.dataset.date = updatedDate;
+          originalLi.dataset.category = updatedCategory;
+
+ 
+          // 기존 todo-left 대체
+          originalLi.replaceChild(newLeft, originalLi.querySelector(".todo-left"));
+
+          const originalLeft = originalLi.querySelector(".todo-left");
+          const originalSpan = originalLeft.querySelector("span");
+          const originalCheckbox = originalLeft.querySelector("input[type='checkbox']");
+          const originalButtonGroup = originalLi.querySelector(".button-group");
+          const originalEditBtn = originalButtonGroup.querySelector(".edit-btn");
+
+          originalEditBtn.replaceWith(originalEditBtn.cloneNode(true));
+          const refreshedEditBtn = originalButtonGroup.querySelector(".edit-btn");
+          refreshedEditBtn.textContent = "✏️";
+          refreshedEditBtn.addEventListener("click", () => {
+            editTodo(originalLi, originalLeft, originalSpan, originalCheckbox, updatedDate, originalButtonGroup);
+          });
+
+          handleCategoryChange(); // 화면 갱신
+        };
+
+      });
 
       resultArea.appendChild(clone);
     }
   });
 
-  // 뷰 전환
   document.querySelector(".main").style.display = "none";
   document.getElementById("calendar-view").style.display = "none";
   document.getElementById("category-view").style.display = "block";
 }
+
 
 // Firebase 초기화
 const firebaseConfig = {
