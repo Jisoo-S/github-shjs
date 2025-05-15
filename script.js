@@ -43,9 +43,17 @@ function getToday() {
     pinBtn.addEventListener("click", () => {
       const isPinned = li.dataset.pinned === "true";
       li.dataset.pinned = isPinned ? "false" : "true";
-    
+
       setPinButtonStyle(pinBtn, !isPinned); // 스타일 재적용
+      
+      // 메인 뷰 정렬
       renderList();
+      
+      // 카테고리 뷰가 열려있는 경우 카테고리 뷰도 업데이트
+      const isCategoryViewVisible = document.getElementById("category-view").style.display === "block";
+      if (isCategoryViewVisible) {
+        handleCategoryChange();
+      }
     });
 
 
@@ -251,13 +259,15 @@ function getToday() {
         editTodo(li, left, newSpan, checkbox, selectedDate, buttonGroup);
       });
 
+      // 메인 뷰 정렬
       renderList();
 
+      // 카테고리 뷰 갱신 확인
       const isCategoryViewVisible = document.getElementById("category-view").style.display === "block";
       if (isCategoryViewVisible) {
         setTimeout(() => {
           handleCategoryChange();
-        }, 100);
+        }, 10);
       }
     });
   }
@@ -372,7 +382,12 @@ function getToday() {
           cloneCheckbox.checked = originCheckbox.checked;
           cloneCheckbox.addEventListener("change", () => {
             originCheckbox.checked = cloneCheckbox.checked;
-            originCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
+            // ✅ 원본 li의 completed 클래스도 토글
+            if (cloneCheckbox.checked) {
+              li.classList.add("completed");
+            } else {
+              li.classList.remove("completed");
+            }
           });
         }
   
@@ -478,192 +493,240 @@ function handleCategoryChange() {
 
   resultArea.innerHTML = "";
 
-  // 📌 정렬: 핀 고정 먼저, 그 다음 날짜 순
-  const sortedTodos = Array.from(allTodos).sort((a, b) => {
-    const pinnedA = a.dataset.pinned === "true";
-    const pinnedB = b.dataset.pinned === "true";
-    if (pinnedA !== pinnedB) return pinnedB - pinnedA;
+  // 📌 정렬: 핀 고정 먼저, 그 다음 날짜 순으로 정렬된 배열 생성
+  const sortedTodos = Array.from(allTodos)
+    .filter(li => (li.dataset.category || "").trim() === selectedCategory)
+    .sort((a, b) => {
+      // 핀 고정 항목 우선
+      const pinnedA = a.dataset.pinned === "true";
+      const pinnedB = b.dataset.pinned === "true";
+      
+      if (pinnedA !== pinnedB) {
+        return pinnedB ? 1 : -1; // pinnedB가 true면 a가 뒤로, false면 a가 앞으로
+      }
 
-    const dateA = a.dataset.date || "";
-    const dateB = b.dataset.date || "";
-    return dateA.localeCompare(dateB);
-  });
+      // 날짜 오름차순 정렬
+      const dateA = a.dataset.date || "";
+      const dateB = b.dataset.date || "";
+      return dateA.localeCompare(dateB);
+    });
 
-  // 이후 기존 로직을 sortedTodos로 돌리기
+  // 정렬된 순서대로 클론 생성하여 추가
   sortedTodos.forEach(originalLi => {
-    const liCategory = (originalLi.dataset.category || "").trim();
-    if (selectedCategory && liCategory === selectedCategory) {
-      // 🔁 여기부터는 기존 클론 및 이벤트 연결 코드 유지
-    }
-  });
+    const clone = originalLi.cloneNode(true);
+    clone.classList.add("todo-item");
 
-  allTodos.forEach(originalLi => {
-    const liCategory = (originalLi.dataset.category || "").trim();
-    if (selectedCategory && liCategory === selectedCategory) {
-      const clone = originalLi.cloneNode(true);
-      clone.classList.add("todo-item");
+    // ✅ 복제본에 직접 수정 기능을 구현하기 위해 이벤트 전부 재설정
+    const checkbox = clone.querySelector("input[type='checkbox']");
+    const originalCheckbox = originalLi.querySelector("input[type='checkbox']");
+    checkbox.checked = originalCheckbox.checked;
+    checkbox.addEventListener("change", () => {
+      originalCheckbox.checked = checkbox.checked;
+      originalCheckbox.dispatchEvent(new Event("change"));
+    });
 
-      // ✅ 복제본에 직접 수정 기능을 구현하기 위해 이벤트 전부 재설정
-      const checkbox = clone.querySelector("input[type='checkbox']");
-      const originalCheckbox = originalLi.querySelector("input[type='checkbox']");
-      checkbox.checked = originalCheckbox.checked;
-      checkbox.addEventListener("change", () => {
-        originalCheckbox.checked = checkbox.checked;
-        originalCheckbox.dispatchEvent(new Event("change"));
+    const editBtn = clone.querySelector(".edit-btn");
+    const deleteBtn = clone.querySelector(".delete-btn");
+    const pinBtn = clone.querySelector(".pin-btn");
+    const left = clone.querySelector(".todo-left");
+
+    deleteBtn.addEventListener("click", () => {
+      originalLi.remove();
+      handleCategoryChange();
+    });
+
+    pinBtn.addEventListener("click", () => {
+      const isPinned = originalLi.dataset.pinned === "true";
+      originalLi.dataset.pinned = isPinned ? "false" : "true";
+      
+      // 원본 버튼에 스타일 적용
+      const originalPinBtn = originalLi.querySelector(".pin-btn");
+      if (originalPinBtn) {
+        setPinButtonStyle(originalPinBtn, !isPinned);
+      }
+
+      // 클론 버튼에도 스타일 적용
+      setPinButtonStyle(pinBtn, !isPinned);
+
+      // 메인 뷰 정렬
+      renderList();
+      
+      // 카테고리 뷰 갱신
+      setTimeout(() => handleCategoryChange(), 10);
+    });
+
+    editBtn.addEventListener("click", () => {
+      const span = left.querySelector("span");
+      const oldText = span.textContent;
+      const oldDate = originalLi.dataset.date;
+      const oldCategory = originalLi.dataset.category || "";
+
+      const buttonGroup = clone.querySelector(".button-group");
+      const originalEditBtn = editBtn.cloneNode(true);
+      
+      // 텍스트 입력창
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = oldText;
+      input.style.fontSize = "14px";
+      input.style.padding = "8px";
+      input.style.borderRadius = "10px";
+      input.style.border = "1px solid #ccc";
+      input.style.width = "200px";
+      input.style.marginRight = "10px";
+
+      // 날짜 입력창
+      const dateInput = document.createElement("input");
+      dateInput.type = "date";
+      dateInput.value = oldDate;
+      dateInput.style.fontSize = "14px";
+      dateInput.style.padding = "8px";
+      dateInput.style.borderRadius = "10px";
+      dateInput.style.border = "1px solid #ccc";
+      dateInput.style.marginRight = "10px";
+
+      // 카테고리 셀렉트
+      const categorySelect = document.createElement("select");
+      categorySelect.style.fontSize = "14px";
+      categorySelect.style.padding = "8px";
+      categorySelect.style.borderRadius = "10px";
+      categorySelect.style.border = "1px solid #ccc";
+
+      Array.from(document.getElementById("todo-category").options).forEach(opt => {
+        const option = new Option(opt.textContent, opt.value);
+        if (opt.value === oldCategory) option.selected = true;
+        categorySelect.appendChild(option);
       });
 
-      const editBtn = clone.querySelector(".edit-btn");
-      const deleteBtn = clone.querySelector(".delete-btn");
-      const pinBtn = clone.querySelector(".pin-btn");
-      const left = clone.querySelector(".todo-left");
+      left.innerHTML = "";
+      left.appendChild(checkbox);
+      left.appendChild(input);
+      left.appendChild(dateInput);
+      left.appendChild(categorySelect);
 
-      deleteBtn.addEventListener("click", () => {
-        originalLi.remove();
-        handleCategoryChange();
-      });
+      // Replace edit button with save button
+      editBtn.textContent = "💾";
+      
+      // Save function that will be used for both click and Enter key
+      const saveChanges = () => {
+        const updatedTitle = input.value.trim();
+        const updatedDate = dateInput.value || oldDate;
+        const updatedCategory = categorySelect.value || "";
 
-      pinBtn.addEventListener("click", () => {
-        const isPinned = originalLi.dataset.pinned === "true";
-        originalLi.dataset.pinned = isPinned ? "false" : "true";
+        if (!updatedTitle) return;
+
+        // Update data attributes on both original and clone
+        originalLi.dataset.date = updatedDate;
+        originalLi.dataset.category = updatedCategory;
+        clone.dataset.date = updatedDate;
+        clone.dataset.category = updatedCategory;
+
+        // Update UI of clone
+        left.innerHTML = "";
         
-        // 원본 버튼에 스타일 적용 (스타일 함수가 있다면 사용)
-        const originalPinBtn = originalLi.querySelector(".pin-btn");
-        if (originalPinBtn) {
-          setPinButtonStyle(originalPinBtn, !isPinned);
+        left.appendChild(checkbox);
+        
+        const titleSpan = document.createElement("span");
+        titleSpan.textContent = updatedTitle;
+        left.appendChild(titleSpan);
+        
+        const dateSpan = document.createElement("span");
+        dateSpan.textContent = `📅 ${updatedDate}`;
+        dateSpan.style.fontSize = "12px";
+        dateSpan.style.marginLeft = "10px";
+        dateSpan.style.opacity = "0.6";
+        left.appendChild(dateSpan);
+        
+        if (updatedCategory) {
+          const categorySpan = document.createElement("span");
+          categorySpan.textContent = updatedCategory;
+          categorySpan.style.fontSize = "12px";
+          categorySpan.style.marginLeft = "10px";
+          categorySpan.style.opacity = "0.8";
+          categorySpan.style.backgroundColor = "#eee";
+          categorySpan.style.padding = "2px 6px";
+          categorySpan.style.borderRadius = "8px";
+          left.appendChild(categorySpan);
         }
 
-        // 클론 버튼에도 스타일 적용
-        setPinButtonStyle(pinBtn, !isPinned);
-
-        handleCategoryChange();
-      });
-
-      editBtn.addEventListener("click", () => {
-        const span = left.querySelector("span");
-        const oldText = span.textContent;
-        const oldDate = originalLi.dataset.date;
-        const oldCategory = originalLi.dataset.category || "";
-
-        const input = document.createElement("input");
-        input.type = "text";
-        input.value = oldText;
+        // Update original item's UI
+        const originalLeft = originalLi.querySelector(".todo-left");
+        originalLeft.innerHTML = "";
         
-        const dateInput = document.createElement("input");
-        dateInput.type = "date";
-        dateInput.value = oldDate;
+        const originalCheckboxNew = document.createElement("input");
+        originalCheckboxNew.type = "checkbox";
+        originalCheckboxNew.checked = checkbox.checked;
+        originalCheckboxNew.addEventListener("change", () => {
+          originalLi.classList.toggle("completed");
+        });
+        originalLeft.appendChild(originalCheckboxNew);
+        
+        const originalTitleSpan = document.createElement("span");
+        originalTitleSpan.textContent = updatedTitle;
+        originalLeft.appendChild(originalTitleSpan);
+        
+        const originalDateSpan = document.createElement("span");
+        originalDateSpan.textContent = `📅 ${updatedDate}`;
+        originalDateSpan.style.fontSize = "12px";
+        originalDateSpan.style.marginLeft = "10px";
+        originalDateSpan.style.opacity = "0.6";
+        originalLeft.appendChild(originalDateSpan);
+        
+        if (updatedCategory) {
+          const originalCategorySpan = document.createElement("span");
+          originalCategorySpan.textContent = updatedCategory;
+          originalCategorySpan.style.fontSize = "12px";
+          originalCategorySpan.style.marginLeft = "10px";
+          originalCategorySpan.style.opacity = "0.8";
+          originalCategorySpan.style.backgroundColor = "#eee";
+          originalCategorySpan.style.padding = "2px 6px";
+          originalCategorySpan.style.borderRadius = "8px";
+          originalLeft.appendChild(originalCategorySpan);
+        }
 
-        const categorySelect = document.createElement("select");
-
-        // 텍스트 입력창
-        input.type = "text";
-        input.value = oldText;
-        input.style.fontSize = "14px";
-        input.style.padding = "8px";
-        input.style.borderRadius = "10px";
-        input.style.border = "1px solid #ccc";
-        input.style.width = "200px";
-        input.style.marginRight = "10px";
-
-        // 날짜 입력창
-        dateInput.type = "date";
-        dateInput.value = oldDate;
-        dateInput.style.fontSize = "14px";
-        dateInput.style.padding = "8px";
-        dateInput.style.borderRadius = "10px";
-        dateInput.style.border = "1px solid #ccc";
-        dateInput.style.marginRight = "10px";
-
-        // 카테고리 셀렉트
-        categorySelect.style.fontSize = "14px";
-        categorySelect.style.padding = "8px";
-        categorySelect.style.borderRadius = "10px";
-        categorySelect.style.border = "1px solid #ccc";
-
-        Array.from(document.getElementById("todo-category").options).forEach(opt => {
-          const option = new Option(opt.textContent, opt.value);
-          if (opt.value === oldCategory) option.selected = true;
-          categorySelect.appendChild(option);
+        // Reset edit button
+        editBtn.textContent = "✏️";
+        
+        // Re-attach the edit event listener
+        editBtn.onclick = null;
+        editBtn.addEventListener("click", () => {
+          // Refresh the category view to get fresh clones with proper event listeners
+          handleCategoryChange();
+          
+          // Find the newly created clone for this item and trigger its edit button
+          setTimeout(() => {
+            const freshClones = document.querySelectorAll("#category-todo-result li");
+            for (let freshClone of freshClones) {
+              if (freshClone.dataset.date === updatedDate && 
+                  freshClone.querySelector(".todo-left span").textContent === updatedTitle) {
+                const freshEditBtn = freshClone.querySelector(".edit-btn");
+                if (freshEditBtn) freshEditBtn.click();
+                break;
+              }
+            }
+          }, 50);
         });
 
-        left.innerHTML = "";
-        left.appendChild(checkbox);
-        left.appendChild(input);
-        left.appendChild(dateInput);
-        left.appendChild(categorySelect);
+        // Update main view sort
+        renderList();
 
-        editBtn.textContent = "💾";
 
-        input.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") {
-            editBtn.click();
-          }
-        });
-        
-        editBtn.onclick = () => {
-          const updatedTitle = input.value.trim();
-          const updatedDate = dateInput.value || oldDate;
-          const updatedCategory = categorySelect.value || "";
+      // 그 다음 카테고리 뷰 완전히 재렌더링 (새로운 날짜로 정렬 적용)
+        setTimeout(() => {
+          handleCategoryChange();
+        }, 100);
+      };
 
-          if (!updatedTitle) return;
-
-          // ⛔ 기존 span 하나만 갱신하던 것 → ✅ 전체 구조 갱신
-          const newLeft = document.createElement("div");
-          newLeft.className = "todo-left";
-
-          const newCheckbox = originalLi.querySelector("input[type='checkbox']");
-          newLeft.appendChild(newCheckbox);
-
-          const titleSpan = document.createElement("span");
-          titleSpan.textContent = updatedTitle;
-          newLeft.appendChild(titleSpan);
-
-          const dateSpan = document.createElement("span");
-          dateSpan.textContent = `📅 ${updatedDate}`;
-          dateSpan.style.fontSize = "12px";
-          dateSpan.style.marginLeft = "10px";
-          dateSpan.style.opacity = "0.6";
-          newLeft.appendChild(dateSpan);
-
-          if (updatedCategory) {
-            const categorySpan = document.createElement("span");
-            categorySpan.textContent = updatedCategory;
-            categorySpan.style.fontSize = "12px";
-            categorySpan.style.marginLeft = "10px";
-            categorySpan.style.opacity = "0.8";
-            categorySpan.style.backgroundColor = "#eee";
-            categorySpan.style.padding = "2px 6px";
-            categorySpan.style.borderRadius = "8px";
-            newLeft.appendChild(categorySpan);
-          }
-
-          // 실제 데이터 반영
-          originalLi.dataset.date = updatedDate;
-          originalLi.dataset.category = updatedCategory;
-
- 
-          // 기존 todo-left 대체
-          originalLi.replaceChild(newLeft, originalLi.querySelector(".todo-left"));
-
-          const originalLeft = originalLi.querySelector(".todo-left");
-          const originalSpan = originalLeft.querySelector("span");
-          const originalCheckbox = originalLeft.querySelector("input[type='checkbox']");
-          const originalButtonGroup = originalLi.querySelector(".button-group");
-          const originalEditBtn = originalButtonGroup.querySelector(".edit-btn");
-
-          originalEditBtn.replaceWith(originalEditBtn.cloneNode(true));
-          const refreshedEditBtn = originalButtonGroup.querySelector(".edit-btn");
-          refreshedEditBtn.textContent = "✏️";
-          refreshedEditBtn.addEventListener("click", () => {
-            editTodo(originalLi, originalLeft, originalSpan, originalCheckbox, updatedDate, originalButtonGroup);
-          });
-
-          handleCategoryChange(); // 화면 갱신
-        };
-
+      // Handle Enter key on input field 
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") saveChanges();
       });
+      
+      // Handle click on save button
+      editBtn.onclick = saveChanges;
+    });
 
-      resultArea.appendChild(clone);
-    }
+    resultArea.appendChild(clone);
   });
 
   document.querySelector(".main").style.display = "none";
