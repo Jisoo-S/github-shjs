@@ -769,3 +769,37 @@ function showModal(message, withInput = false, callback) {
 
 }
 
+ const noteList = document.getElementById('note-list');
+  const noteInput = document.getElementById('note-input');
+
+  function addNote() {
+    const text = noteInput.value.trim();
+    if (text === '') return;
+
+    const li = document.createElement('li');
+    li.style.display = 'flex';
+    li.style.alignItems = 'center';
+    li.style.justifyContent = 'space-between';
+    li.style.padding = '8px 12px';
+    li.style.marginBottom = '6px';
+    li.style.background = '#fff';
+    li.style.borderRadius = '10px';
+    li.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+    
+    const span = document.createElement('span');
+    span.textContent = text;
+    span.style.flex = '1';
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '🗑️';
+    delBtn.style.background = 'none';
+    delBtn.style.border = 'none';
+    delBtn.style.cursor = 'pointer';
+    delBtn.onclick = () => li.remove();
+
+    li.appendChild(span);
+    li.appendChild(delBtn);
+
+    noteList.appendChild(li);
+    noteInput.value = '';
+  }
