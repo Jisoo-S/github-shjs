@@ -768,3 +768,210 @@ function showModal(message, withInput = false, callback) {
   });
 
 }
+
+const noteList = document.getElementById('note-list');
+const noteInput = document.getElementById('note-input');
+
+  function addNote() {
+    const text = noteInput.value.trim();
+    if (text === '') return;
+
+    const li = document.createElement('li');
+    li.style.display = 'flex';
+    li.style.alignItems = 'center';
+    li.style.justifyContent = 'space-between';
+    li.style.padding = '8px 12px';
+    li.style.marginBottom = '6px';
+    li.style.background = '#fff';
+    li.style.borderRadius = '10px';
+    li.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+    
+    const span = document.createElement('span');
+    span.textContent = text;
+    span.style.flex = '1';
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '🗑️';
+    delBtn.style.background = 'none';
+    delBtn.style.border = 'none';
+    delBtn.style.cursor = 'pointer';
+    delBtn.onclick = () => li.remove();
+
+    li.appendChild(span);
+    li.appendChild(delBtn);
+
+    noteList.appendChild(li);
+    noteInput.value = '';
+  }
+
+  noteInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addNote();
+    }
+  });
+
+
+function showMonthView() {
+  calendarMode = "month"; // ← 이거 추가
+
+  const now = new Date(currentDate); // ← 기존 currentDate를 사용해야 함
+  const year = now.getFullYear();
+  const monthIndex = now.getMonth();
+  const monthName = now.toLocaleString('default', { month: 'long' });
+
+  document.getElementById("calendar-title").textContent = monthName.toUpperCase();
+
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+  const firstDay = new Date(year, monthIndex, 1).getDay();
+
+  const grid = document.getElementById("calendar-grid");
+  grid.style.gridTemplateColumns = "repeat(7, 1fr)";
+  grid.innerHTML = "";
+
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+
+  for (let i = 0; i < totalCells; i++) {
+    const cell = document.createElement("div");
+    cell.className = "calendar-cell";
+    if (i >= firstDay && i < firstDay + daysInMonth) {
+      const dayNum = i - firstDay + 1;
+      cell.textContent = dayNum;
+    }
+    grid.appendChild(cell);
+  }
+}
+  
+function showWeekView() {
+  calendarMode = "week";
+
+  const startOfWeek = new Date(currentDate);
+  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + 1); // 월요일 시작
+
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6); // 일요일 끝
+
+  const currentMonth = currentDate.getMonth();
+
+  const startWeekNum = getWeekNumberInMonth(startOfWeek);
+  const endWeekNum = getWeekNumberInMonth(endOfWeek);
+
+  const startMonth = startOfWeek.getMonth();
+  const endMonth = endOfWeek.getMonth();
+
+  let label = "";
+
+  if (startMonth === endMonth) {
+    label = `${ordinal(startWeekNum)} week`;
+  } else {
+    // 예: "5th week / 1st week"
+    label = `${ordinal(startWeekNum)} week / ${ordinal(endWeekNum)} week`;
+  }
+
+  document.getElementById("calendar-title").textContent = label;
+
+  const grid = document.getElementById("calendar-grid");
+  grid.innerHTML = "";
+  grid.style.gridTemplateColumns = "repeat(7, 1fr)";
+
+  for (let i = 0; i < 7; i++) {
+    const day = new Date(startOfWeek);
+    day.setDate(startOfWeek.getDate() + i);
+    const cell = document.createElement("div");
+    cell.className = "calendar-cell";
+    cell.textContent = day.getDate();
+    grid.appendChild(cell);
+  }
+}
+
+
+function showTodayView() {
+  calendarMode = "today";
+
+  const dateStr = `${currentDate.getMonth() + 1}/${currentDate.getDate()}`;
+  document.getElementById("calendar-title").textContent = dateStr;
+
+  const grid = document.getElementById("calendar-grid");
+  grid.innerHTML = "";
+  grid.style.gridTemplateColumns = "1fr";
+
+  const cell = document.createElement("div");
+  cell.className = "calendar-cell";
+  cell.textContent = currentDate.getDate();
+  grid.appendChild(cell);
+}
+
+
+
+let currentDate = new Date();
+let calendarMode = "month"; // or 'week' or 'today'
+
+// VIEW 초기 진입 시 자동 실행
+calendarIcon.addEventListener("click", () => {
+  todoMain.style.display = "none";
+  calendarView.style.display = "block";
+  categoryView.style.display = "none";
+  friendsView.style.display = "none";
+  showMonthView(); // ✅ 자동 표시
+});
+
+// 이전/다음 버튼
+function goPrev() {
+  if (calendarMode === "month") {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    showMonthView();
+  } else if (calendarMode === "week") {
+    currentDate.setDate(currentDate.getDate() - 7);
+    showWeekView();
+  } else if (calendarMode === "today") {
+    currentDate.setDate(currentDate.getDate() - 1);
+    showTodayView();
+  }
+}
+
+function goNext() {
+  if (calendarMode === "month") {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    showMonthView();
+  } else if (calendarMode === "week") {
+    currentDate.setDate(currentDate.getDate() + 7);
+    showWeekView();
+  } else if (calendarMode === "today") {
+    currentDate.setDate(currentDate.getDate() + 1);
+    showTodayView();
+  }
+}
+
+
+function getWeekNumberInMonth(date) {
+  const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+  const firstDay = (firstDayOfMonth.getDay() + 6) % 7; // 월요일: 0, 일요일: 6
+  const day = date.getDate();
+
+  return Math.ceil((day + firstDay) / 7);
+}
+
+
+function ordinal(n) {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  // MONTH 버튼도 currentDate 리셋 포함
+  document.querySelector(".calendar-btn:nth-child(1)").addEventListener("click", () => {
+    currentDate = new Date(); // ✅ 리셋 추가
+    showMonthView();
+  });
+
+  document.querySelector(".calendar-btn:nth-child(2)").addEventListener("click", () => {
+    currentDate = new Date();
+    showWeekView();
+  });
+
+  document.querySelector(".calendar-btn:nth-child(3)").addEventListener("click", () => {
+    currentDate = new Date();
+    showTodayView();
+  });
+});
