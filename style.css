@@ -415,7 +415,6 @@ li.completed span {
   align-items: flex-start;
 }
 
-
 #note-panel {
   width: 300px;              /* ✅ 항상 고정 */
   flex-shrink: 0;            /* ✅ 줄어들지 않게 */
