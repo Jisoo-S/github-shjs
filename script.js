@@ -982,9 +982,9 @@ const noteInput = document.getElementById('note-input');
 
 
 function showMonthView() {
-  calendarMode = "month"; // ← 이거 추가
+  calendarMode = "month";
 
-  const now = new Date(currentDate); // ← 기존 currentDate를 사용해야 함
+  const now = new Date(currentDate);
   const year = now.getFullYear();
   const monthIndex = now.getMonth();
   const monthName = now.toLocaleString('default', { month: 'long' });
@@ -998,16 +998,35 @@ function showMonthView() {
   grid.style.gridTemplateColumns = "repeat(7, 1fr)";
   grid.innerHTML = "";
 
+  // 요일 헤더 추가
+  const days = ['일', '월', '화', '수', '목', '금', '토'];
+  days.forEach(day => {
+    const header = document.createElement('div');
+    header.className = 'calendar-header';
+    header.textContent = day;
+    header.style.textAlign = 'center';
+    header.style.padding = '10px';
+    header.style.fontWeight = 'bold';
+    header.style.color = day === '일' ? '#ff6b6b' : day === '토' ? '#4dabf7' : 'inherit';
+    grid.appendChild(header);
+  });
+
   const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
 
   for (let i = 0; i < totalCells; i++) {
-    const cell = document.createElement("div");
-    cell.className = "calendar-cell";
-    if (i >= firstDay && i < firstDay + daysInMonth) {
-      const dayNum = i - firstDay + 1;
-      cell.textContent = dayNum;
+    if (i < firstDay) {
+      const emptyCell = document.createElement('div');
+      emptyCell.className = 'calendar-cell';
+      grid.appendChild(emptyCell);
+    } else if (i < firstDay + daysInMonth) {
+      const date = new Date(year, monthIndex, i - firstDay + 1);
+      const cell = createCalendarCell(date);
+      grid.appendChild(cell);
+    } else {
+      const emptyCell = document.createElement('div');
+      emptyCell.className = 'calendar-cell';
+      grid.appendChild(emptyCell);
     }
-    grid.appendChild(cell);
   }
 }
   
@@ -1015,12 +1034,10 @@ function showWeekView() {
   calendarMode = "week";
 
   const startOfWeek = new Date(currentDate);
-  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + 1); // 월요일 시작
+  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
 
   const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6); // 일요일 끝
-
-  const currentMonth = currentDate.getMonth();
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
 
   const startWeekNum = getWeekNumberInMonth(startOfWeek);
   const endWeekNum = getWeekNumberInMonth(endOfWeek);
@@ -1028,14 +1045,9 @@ function showWeekView() {
   const startMonth = startOfWeek.getMonth();
   const endMonth = endOfWeek.getMonth();
 
-  let label = "";
-
-  if (startMonth === endMonth) {
-    label = `${ordinal(startWeekNum)} week`;
-  } else {
-    // 예: "5th week / 1st week"
-    label = `${ordinal(startWeekNum)} week / ${ordinal(endWeekNum)} week`;
-  }
+  let label = startMonth === endMonth ? 
+    `${ordinal(startWeekNum)} week` : 
+    `${ordinal(startWeekNum)} week / ${ordinal(endWeekNum)} week`;
 
   document.getElementById("calendar-title").textContent = label;
 
@@ -1043,34 +1055,42 @@ function showWeekView() {
   grid.innerHTML = "";
   grid.style.gridTemplateColumns = "repeat(7, 1fr)";
 
+  // 요일 헤더 추가
+  const days = ['일', '월', '화', '수', '목', '금', '토'];
+  days.forEach(day => {
+    const header = document.createElement('div');
+    header.className = 'calendar-header';
+    header.textContent = day;
+    header.style.textAlign = 'center';
+    header.style.padding = '10px';
+    header.style.fontWeight = 'bold';
+    header.style.color = day === '일' ? '#ff6b6b' : day === '토' ? '#4dabf7' : 'inherit';
+    grid.appendChild(header);
+  });
+
   for (let i = 0; i < 7; i++) {
-    const day = new Date(startOfWeek);
-    day.setDate(startOfWeek.getDate() + i);
-    const cell = document.createElement("div");
-    cell.className = "calendar-cell";
-    cell.textContent = day.getDate();
+    const date = new Date(startOfWeek);
+    date.setDate(startOfWeek.getDate() + i);
+    const cell = createCalendarCell(date);
     grid.appendChild(cell);
   }
 }
 
-
 function showTodayView() {
   calendarMode = "today";
 
-  const dateStr = `${currentDate.getMonth() + 1}/${currentDate.getDate()}`;
+  const today = new Date(currentDate);
+  const dateStr = `${today.getMonth() + 1}/${today.getDate()}`;
   document.getElementById("calendar-title").textContent = dateStr;
 
   const grid = document.getElementById("calendar-grid");
   grid.innerHTML = "";
   grid.style.gridTemplateColumns = "1fr";
 
-  const cell = document.createElement("div");
-  cell.className = "calendar-cell";
-  cell.textContent = currentDate.getDate();
+  const cell = createCalendarCell(today);
+  cell.style.height = "200px";
   grid.appendChild(cell);
 }
-
-
 
 let currentDate = new Date();
 let calendarMode = "month"; // or 'week' or 'today'
@@ -1111,7 +1131,6 @@ function goNext() {
   }
 }
 
-
 function getWeekNumberInMonth(date) {
   const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
   const firstDay = (firstDayOfMonth.getDay() + 6) % 7; // 월요일: 0, 일요일: 6
@@ -1119,7 +1138,6 @@ function getWeekNumberInMonth(date) {
 
   return Math.ceil((day + firstDay) / 7);
 }
-
 
 function ordinal(n) {
   const s = ["th", "st", "nd", "rd"];
@@ -1144,3 +1162,316 @@ document.addEventListener("DOMContentLoaded", () => {
     showTodayView();
   });
 });
+
+// 캘린더 메모 관련 함수들
+function saveMemo(date, memo) {
+  const memos = JSON.parse(localStorage.getItem('calendar_memos') || '{}');
+  memos[date] = memo;
+  localStorage.setItem('calendar_memos', JSON.stringify(memos));
+}
+
+function getMemo(date) {
+  const memos = JSON.parse(localStorage.getItem('calendar_memos') || '{}');
+  return memos[date] || '';
+}
+
+function showMemoModal(date) {
+  const formattedDate = date.toISOString().split('T')[0];
+  const existingMemo = getMemo(formattedDate);
+  
+  const message = `
+    <div style="margin-bottom: 10px;">
+      <strong>${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일</strong>
+    </div>
+    <textarea id="memo-textarea" 
+      style="width: 100%; height: 150px; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; resize: none;"
+      placeholder="메모를 입력하세요...">${existingMemo}</textarea>
+  `;
+
+  showModal(message, false, (confirmed) => {
+    if (confirmed) {
+      const memo = document.getElementById('memo-textarea').value.trim();
+      saveMemo(formattedDate, memo);
+      updateCalendarCell(date);
+    }
+  });
+}
+
+function updateCalendarCell(date) {
+  const formattedDate = date.toISOString().split('T')[0];
+  const memo = getMemo(formattedDate);
+  const cells = document.querySelectorAll('.calendar-cell');
+  
+  cells.forEach(cell => {
+    const cellDate = cell.dataset.date;
+    if (cellDate === formattedDate) {
+      if (memo) {
+        if (!cell.querySelector('.memo-indicator')) {
+          const indicator = document.createElement('div');
+          indicator.className = 'memo-indicator';
+          indicator.style.cssText = `
+            width: 6px;
+            height: 6px;
+            background-color: #ffcc70;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+          `;
+          cell.appendChild(indicator);
+        }
+      } else {
+        const indicator = cell.querySelector('.memo-indicator');
+        if (indicator) {
+          indicator.remove();
+        }
+      }
+    }
+  });
+}
+
+function createCalendarCell(date) {
+  const cell = document.createElement("div");
+  cell.className = "calendar-cell";
+  cell.style.position = "relative";
+  cell.style.cursor = "pointer";
+  cell.style.userSelect = "none";
+  
+  const formattedDate = date.toISOString().split('T')[0];
+  cell.dataset.date = formattedDate;
+  
+  cell.textContent = date.getDate();
+  
+  // 메모 표시기 추가
+  const memo = getMemo(formattedDate);
+  if (memo) {
+    const indicator = document.createElement('div');
+    indicator.className = 'memo-indicator';
+    indicator.style.cssText = `
+      width: 6px;
+      height: 6px;
+      background-color: #ffcc70;
+      border-radius: 50%;
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+    `;
+    cell.appendChild(indicator);
+  }
+  
+  cell.addEventListener('click', () => {
+    showMemoModal(date);
+  });
+  
+  return cell;
+}
+
+// 노트 관련 함수들
+function saveNotes(notes) {
+  localStorage.setItem('calendar_notes', JSON.stringify(notes));
+}
+
+function getNotes() {
+  return JSON.parse(localStorage.getItem('calendar_notes') || '[]');
+}
+
+function addNote() {
+  const noteInput = document.getElementById('note-input');
+  const text = noteInput.value.trim();
+  const categorySelect = document.getElementById('note-category');
+  const category = categorySelect.value;
+  
+  if (!text) return;
+
+  const notes = getNotes();
+  const newNote = {
+    id: Date.now(),
+    text: text,
+    category: category,
+    completed: false,
+    date: new Date().toISOString()
+  };
+
+  notes.push(newNote);
+  saveNotes(notes);
+  renderNotes();
+  noteInput.value = '';
+}
+
+function toggleNoteComplete(id) {
+  const notes = getNotes();
+  const note = notes.find(n => n.id === id);
+  if (note) {
+    note.completed = !note.completed;
+    saveNotes(notes);
+    renderNotes();
+  }
+}
+
+function deleteNote(id) {
+  const notes = getNotes();
+  const filteredNotes = notes.filter(n => n.id !== id);
+  saveNotes(filteredNotes);
+  renderNotes();
+}
+
+function renderNotes() {
+  const noteList = document.getElementById('note-list');
+  const notes = getNotes();
+  const selectedCategory = document.getElementById('note-filter').value;
+  
+  // 필터링
+  let filteredNotes = notes;
+  if (selectedCategory) {
+    filteredNotes = filteredNotes.filter(note => note.category === selectedCategory);
+  }
+
+  // 정렬: 날짜 > 완료여부
+  filteredNotes.sort((a, b) => {
+    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    return new Date(b.date) - new Date(a.date);
+  });
+
+  noteList.innerHTML = '';
+  
+  filteredNotes.forEach(note => {
+    const li = document.createElement('li');
+    li.style.cssText = `
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      margin-bottom: 8px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+      ${note.completed ? 'opacity: 0.7;' : ''}
+    `;
+
+    // 체크박스
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = note.completed;
+    checkbox.style.cssText = `
+      margin-right: 12px;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    `;
+    checkbox.addEventListener('change', () => toggleNoteComplete(note.id));
+    li.appendChild(checkbox);
+
+    // 메모 내용
+    const content = document.createElement('div');
+    content.style.cssText = `
+      flex-grow: 1;
+      margin-right: 12px;
+    `;
+    
+    const text = document.createElement('div');
+    text.style.cssText = `
+      ${note.completed ? 'text-decoration: line-through;' : ''}
+      margin-bottom: 4px;
+    `;
+    text.textContent = note.text;
+    content.appendChild(text);
+
+    // 카테고리와 날짜 정보
+    const meta = document.createElement('div');
+    meta.style.cssText = `
+      font-size: 12px;
+      color: #666;
+      display: flex;
+      gap: 8px;
+    `;
+    
+    const categorySpan = document.createElement('span');
+    categorySpan.textContent = note.category;
+    categorySpan.style.cssText = `
+      background: #f0f0f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+    `;
+    meta.appendChild(categorySpan);
+
+    const dateSpan = document.createElement('span');
+    dateSpan.textContent = new Date(note.date).toLocaleDateString();
+    meta.appendChild(dateSpan);
+
+    content.appendChild(meta);
+    li.appendChild(content);
+
+    // 삭제 버튼
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = '🗑️';
+    deleteBtn.style.cssText = `
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      opacity: 0.5;
+      transition: opacity 0.2s;
+    `;
+    deleteBtn.addEventListener('mouseover', () => deleteBtn.style.opacity = '1');
+    deleteBtn.addEventListener('mouseout', () => deleteBtn.style.opacity = '0.5');
+    deleteBtn.addEventListener('click', () => deleteNote(note.id));
+    li.appendChild(deleteBtn);
+
+    noteList.appendChild(li);
+  });
+}
+
+// Notes 패널 초기화
+function initializeNotesPanel() {
+  const notePanel = document.getElementById('note-panel');
+  notePanel.innerHTML = `
+    <div style="margin-bottom: 20px;">
+      <div style="display: flex; gap: 8px;">
+        <select id="note-category" style="flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
+          <option value="📝 일반">📝 일반</option>
+          <option value="📚 공부">📚 공부</option>
+          <option value="🏃 운동">🏃 운동</option>
+          <option value="🛒 쇼핑">🛒 쇼핑</option>
+          <option value="💼 업무">💼 업무</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom: 20px;">
+      <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+        <input type="text" id="note-input" placeholder="새 메모..." 
+          style="flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
+        <button onclick="addNote()" 
+          style="padding: 8px 16px; background: #ffcc70; color: white; border: none; border-radius: 8px; cursor: pointer;">
+          추가
+        </button>
+      </div>
+    </div>
+    <div style="margin-bottom: 10px;">
+      <select id="note-filter" onchange="renderNotes()" 
+        style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
+        <option value="">모든 카테고리</option>
+        <option value="📝 일반">📝 일반</option>
+        <option value="📚 공부">📚 공부</option>
+        <option value="🏃 운동">🏃 운동</option>
+        <option value="🛒 쇼핑">🛒 쇼핑</option>
+        <option value="💼 업무">💼 업무</option>
+      </select>
+    </div>
+    <ul id="note-list" style="list-style: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto;"></ul>
+  `;
+
+  // 엔터 키로 메모 추가
+  document.getElementById('note-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      addNote();
+    }
+  });
+
+  // 초기 렌더링
+  renderNotes();
+}
+
+// 페이지 로드 시 Notes 패널 초기화
+document.addEventListener('DOMContentLoaded', initializeNotesPanel);

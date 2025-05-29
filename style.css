@@ -392,7 +392,7 @@ li.completed span {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 1px;
-  background-color: black;
+  background-color: rgb(255, 234, 234);
   border-radius: 10px;
   overflow: hidden;
 }
