@@ -674,59 +674,228 @@ function handleCategoryChange() {
 
 // Firebase 초기화
 const firebaseConfig = {
-  apiKey: "AIzaSyADIDRqmGCI6PGofskRtVnrsTK2xHpoqEw",
-  authDomain: "logintodo-ff777.firebaseapp.com",
-  projectId: "logintodo-ff777",
-  storageBucket: "logintodo-ff777.appspot.com",
-  messagingSenderId: "1067689858137",
-  appId: "1:1067689858137:web:c2de1fdbe937bfb2104d48",
-  measurementId: "G-0SYF713XKM"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 
-// 회원가입
-function signup() {
-  const email = document.getElementById("login-email").value;
-  const password = document.getElementById("login-password").value;
-  auth.createUserWithEmailAndPassword(email, password)
-    .then((userCredential) => {
-      alert("회원가입 성공!");
-    })
-    .catch((error) => {
-      alert(error.message);
-    });
-}
+// 사용자 상태 관리
+let currentUser = null;
 
-// 로그인
-function login() {
-  const email = document.getElementById("login-email").value;
-  const password = document.getElementById("login-password").value;
-  auth.signInWithEmailAndPassword(email, password)
-    .then((userCredential) => {
-      alert("로그인 성공!");
-    })
-    .catch((error) => {
-      alert(error.message);
-    });
-}
- 
-// 로그아웃
-function logout() {
-  auth.signOut().then(() => {
-    alert("로그아웃 완료");
-  });
-}
+// 로그인 함수
+async function login() {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
 
-// 로그인 상태 확인
-auth.onAuthStateChanged((user) => {
-  const userInfo = document.getElementById("user-info");
-  if (user) {
-    userInfo.innerText = `현재 로그인된 사용자: ${user.email}`;
-  } else {
-    userInfo.innerText = "로그인 안됨";
+  try {
+    const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+    currentUser = userCredential.user;
+    updateUserUI();
+    loadFriendsList();
+  } catch (error) {
+    showModal(error.message);
   }
+}
+
+// 회원가입 함수
+async function signup() {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+
+  try {
+    const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+    currentUser = userCredential.user;
+    await initializeUserProfile(currentUser);
+    updateUserUI();
+  } catch (error) {
+    showModal(error.message);
+  }
+}
+
+// 로그아웃 함수
+async function logout() {
+  try {
+    await firebase.auth().signOut();
+    currentUser = null;
+    updateUserUI();
+  } catch (error) {
+    showModal(error.message);
+  }
+}
+
+// 사용자 프로필 초기화
+async function initializeUserProfile(user) {
+  const userProfile = {
+    email: user.email,
+    displayName: user.email.split('@')[0],
+    photoURL: `https://api.dicebear.com/6.x/initials/svg?seed=${user.email}`,
+    friends: []
+  };
+
+  try {
+    await firebase.firestore().collection('users').doc(user.uid).set(userProfile);
+  } catch (error) {
+    console.error('Error initializing user profile:', error);
+  }
+}
+
+// UI 업데이트
+function updateUserUI() {
+  const loginForm = document.getElementById('login-form');
+  const userInfo = document.getElementById('user-info');
+  const profileImage = document.getElementById('profile-image');
+
+  if (currentUser) {
+    loginForm.style.display = 'none';
+    userInfo.style.display = 'block';
+    profileImage.src = currentUser.photoURL || `https://api.dicebear.com/6.x/initials/svg?seed=${currentUser.email}`;
+    loadFriendsList();
+  } else {
+    loginForm.style.display = 'block';
+    userInfo.style.display = 'none';
+    document.getElementById('friends-list').innerHTML = '';
+    document.getElementById('friend-home').style.display = 'none';
+  }
+}
+
+// 친구 목록 로드
+async function loadFriendsList() {
+  if (!currentUser) return;
+
+  try {
+    const userDoc = await firebase.firestore().collection('users').doc(currentUser.uid).get();
+    const userData = userDoc.data();
+    const friendsList = document.getElementById('friends-list');
+    friendsList.innerHTML = '';
+
+    if (userData.friends && userData.friends.length > 0) {
+      for (const friendId of userData.friends) {
+        const friendDoc = await firebase.firestore().collection('users').doc(friendId).get();
+        const friendData = friendDoc.data();
+        
+        const friendElement = createFriendElement(friendId, friendData);
+        friendsList.appendChild(friendElement);
+      }
+    } else {
+      friendsList.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">아직 친구가 없습니다.</p>';
+    }
+  } catch (error) {
+    console.error('Error loading friends list:', error);
+  }
+}
+
+// 친구 프로필 요소 생성
+function createFriendElement(friendId, friendData) {
+  const friendDiv = document.createElement('div');
+  friendDiv.className = 'friend-profile';
+  friendDiv.style.cssText = `
+    background: white;
+    border-radius: 16px;
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  `;
+
+  friendDiv.innerHTML = `
+    <img src="${friendData.photoURL}" alt="${friendData.displayName}" 
+      style="width: 60px; height: 60px; border-radius: 50%; margin-bottom: 10px;">
+    <div style="font-weight: bold;">${friendData.displayName}</div>
+  `;
+
+  friendDiv.addEventListener('click', () => showFriendHome(friendId, friendData));
+  
+  friendDiv.addEventListener('mouseenter', () => {
+    friendDiv.style.transform = 'translateY(-5px)';
+  });
+  
+  friendDiv.addEventListener('mouseleave', () => {
+    friendDiv.style.transform = 'translateY(0)';
+  });
+
+  return friendDiv;
+}
+
+// 친구의 홈 화면 표시
+async function showFriendHome(friendId, friendData) {
+  const friendsList = document.getElementById('friends-list');
+  const friendHome = document.getElementById('friend-home');
+  const friendName = document.getElementById('friend-name');
+  const friendTodos = document.getElementById('friend-todos');
+
+  friendsList.style.display = 'none';
+  friendHome.style.display = 'block';
+  friendName.textContent = `${friendData.displayName}의 할 일`;
+
+  try {
+    const todosSnapshot = await firebase.firestore()
+      .collection('users')
+      .doc(friendId)
+      .collection('todos')
+      .get();
+
+    friendTodos.innerHTML = '';
+    
+    if (todosSnapshot.empty) {
+      friendTodos.innerHTML = '<p style="text-align: center;">할 일이 없습니다.</p>';
+      return;
+    }
+
+    todosSnapshot.forEach(doc => {
+      const todo = doc.data();
+      const todoElement = createFriendTodoElement(todo);
+      friendTodos.appendChild(todoElement);
+    });
+  } catch (error) {
+    console.error('Error loading friend todos:', error);
+    friendTodos.innerHTML = '<p style="text-align: center;">할 일을 불러오는데 실패했습니다.</p>';
+  }
+}
+
+// 친구의 할 일 요소 생성
+function createFriendTodoElement(todo) {
+  const todoDiv = document.createElement('div');
+  todoDiv.style.cssText = `
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  `;
+
+  todoDiv.innerHTML = `
+    <div>
+      <div style="font-weight: bold;">${todo.text}</div>
+      <div style="font-size: 12px; color: #666; margin-top: 5px;">
+        📅 ${todo.date}
+        ${todo.category ? `<span style="margin-left: 10px;">${todo.category}</span>` : ''}
+      </div>
+    </div>
+    ${todo.completed ? '<span style="color: #4CAF50;">✓ 완료</span>' : ''}
+  `;
+
+  return todoDiv;
+}
+
+// 친구 목록으로 돌아가기
+function backToFriendsList() {
+  document.getElementById('friends-list').style.display = 'grid';
+  document.getElementById('friend-home').style.display = 'none';
+}
+
+// Firebase 인증 상태 변경 감지
+firebase.auth().onAuthStateChanged((user) => {
+  currentUser = user;
+  updateUserUI();
 });
 
 function showModal(message, withInput = false, callback) {
