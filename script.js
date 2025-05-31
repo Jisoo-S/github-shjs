@@ -30,6 +30,7 @@ function getToday() {
     checkbox.type = "checkbox";
     checkbox.addEventListener("change", () => {
       li.classList.toggle("completed");
+      saveTodoList(); // 체크박스 변경 시 저장
     });
     
 
@@ -105,6 +106,7 @@ function getToday() {
     deleteBtn.style.cursor = "pointer";
     deleteBtn.addEventListener("click", () => {
       li.remove();
+      saveTodoList(); // 삭제 시 저장
     });
   
     const buttonGroup = document.createElement("div");
@@ -126,6 +128,7 @@ function getToday() {
     categorySelect.value = "";
 
     renderList();  
+    saveTodoList(); // 추가 시 저장
   }
 
   function renderList() {
@@ -245,9 +248,9 @@ function getToday() {
       }
 
       cloned.replaceWith(cloned.cloneNode(true));
-      const restoredBtn = buttonGroup.querySelector(".edit-btn");
-      restoredBtn.textContent = "✏️";
-      restoredBtn.addEventListener("click", () => {
+      const refreshedEditBtn = buttonGroup.querySelector(".edit-btn");
+      refreshedEditBtn.textContent = "✏️";
+      refreshedEditBtn.addEventListener("click", () => {
         editTodo(li, left, newSpan, checkbox, selectedDate, buttonGroup);
       });
 
@@ -1475,3 +1478,58 @@ function initializeNotesPanel() {
 
 // 페이지 로드 시 Notes 패널 초기화
 document.addEventListener('DOMContentLoaded', initializeNotesPanel);
+
+// 투두리스트 저장 함수
+function saveTodoList() {
+  const todoList = document.getElementById("todo-list");
+  const todos = Array.from(todoList.children).map(li => ({
+    text: li.querySelector(".todo-left span").textContent,
+    date: li.dataset.date,
+    category: li.dataset.category,
+    completed: li.classList.contains("completed"),
+    pinned: li.dataset.pinned === "true"
+  }));
+  localStorage.setItem("todoList", JSON.stringify(todos));
+}
+
+// 투두리스트 불러오기 함수
+function loadTodoList() {
+  const savedTodos = localStorage.getItem("todoList");
+  if (!savedTodos) return;
+
+  const todos = JSON.parse(savedTodos);
+  const list = document.getElementById("todo-list");
+  list.innerHTML = ""; // 기존 리스트 초기화
+
+  todos.forEach(todo => {
+    const input = document.getElementById("todo-input");
+    const dateInput = document.getElementById("todo-date");
+    const categorySelect = document.getElementById("todo-category");
+
+    input.value = todo.text;
+    dateInput.value = todo.date;
+    categorySelect.value = todo.category;
+
+    addTodo(); // 기존 addTodo 함수 재사용
+
+    // 완료 상태와 핀 상태 복원
+    const lastItem = list.lastElementChild;
+    if (todo.completed) {
+      lastItem.classList.add("completed");
+      lastItem.querySelector("input[type='checkbox']").checked = true;
+    }
+    if (todo.pinned) {
+      lastItem.dataset.pinned = "true";
+      const pinBtn = lastItem.querySelector(".pin-btn");
+      setPinButtonStyle(pinBtn, true);
+    }
+  });
+
+  renderList(); // 정렬 적용
+}
+
+// 페이지 로드 시 저장된 투두리스트 불러오기
+document.addEventListener("DOMContentLoaded", () => {
+  loadTodoList();
+  initializeNotesPanel();
+});
