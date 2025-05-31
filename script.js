@@ -300,34 +300,42 @@ function getToday() {
       li.style.display = "flex";
     });
 
-    document.querySelector(".main").style.display = "block";               // To-do 보이기
-    document.getElementById("calendar-view").style.display = "none";      // 캘린더 숨기기
+    document.querySelector(".main").style.display = "block";               
+    document.getElementById("calendar-view").style.display = "none";      
     document.getElementById("category-view").style.display = "none";
     document.getElementById("friends-view").style.display = "none";
 
+    // 현재 뷰 저장
+    localStorage.setItem("currentView", "todo");
   });
 
 // 📅 아이콘 (캘린더 화면 전환)
   icons[1].addEventListener("click", () => {
-    document.querySelector(".main").style.display = "none";               // To-do 숨기기
-    document.getElementById("calendar-view").style.display = "block";     // 캘린더 보이기
-    const calendarSection = document.querySelector(".calendar-section");
-    if (calendarSection) calendarSection.style.display = "none";          // 다른 캘린더 섹션도 숨기기
+    document.querySelector(".main").style.display = "none";               
+    document.getElementById("calendar-view").style.display = "block";     
+    document.getElementById("category-view").style.display = "none";
+    document.getElementById("friends-view").style.display = "none";
+    
+    // 현재 뷰 저장
+    localStorage.setItem("currentView", "calendar");
   });
 
   let showCompleted = true;
 
   categoryIcon.addEventListener("click", () => {
-    todoMain.style.display = "none";
-    calendarView.style.display = "none";
-    categoryView.style.display = "block";
-    friendsView.style.display = "none";
+    document.querySelector(".main").style.display = "none";
+    document.getElementById("calendar-view").style.display = "none";
+    document.getElementById("category-view").style.display = "block";
+    document.getElementById("friends-view").style.display = "none";
   
+    // 현재 뷰 저장
+    localStorage.setItem("currentView", "category");
+
     const selectedCategory = document.getElementById("category-edit-select").value;
     if (selectedCategory) {
-      handleCategoryChange(); // 선택된 항목 다시 보여줌
+      handleCategoryChange();
     } else {
-      document.getElementById("category-todo-result").innerHTML = ""; // 선택 안 됐으면 초기화
+      document.getElementById("category-todo-result").innerHTML = "";
     }
   });
   
@@ -1528,8 +1536,41 @@ function loadTodoList() {
   renderList(); // 정렬 적용
 }
 
-// 페이지 로드 시 저장된 투두리스트 불러오기
+// 마지막 뷰 복원 함수
+function restoreLastView() {
+  const lastView = localStorage.getItem("currentView") || "todo";
+  
+  // 모든 뷰 숨기기
+  document.querySelector(".main").style.display = "none";
+  document.getElementById("calendar-view").style.display = "none";
+  document.getElementById("category-view").style.display = "none";
+  document.getElementById("friends-view").style.display = "none";
+
+  // 마지막 뷰 표시
+  switch(lastView) {
+    case "todo":
+      document.querySelector(".main").style.display = "block";
+      document.querySelectorAll("#todo-list li").forEach(li => {
+        li.style.display = "flex";
+      });
+      break;
+    case "calendar":
+      document.getElementById("calendar-view").style.display = "block";
+      showMonthView(); // 캘린더 뷰 초기화
+      break;
+    case "category":
+      document.getElementById("category-view").style.display = "block";
+      const selectedCategory = document.getElementById("category-edit-select").value;
+      if (selectedCategory) {
+        handleCategoryChange();
+      }
+      break;
+  }
+}
+
+// 페이지 로드 시 마지막 뷰 복원 추가
 document.addEventListener("DOMContentLoaded", () => {
   loadTodoList();
   initializeNotesPanel();
+  restoreLastView(); // 마지막 뷰 복원
 });
