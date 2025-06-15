@@ -4,13 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>To Do List</title>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>To Do List</title>
   <link rel="stylesheet" href="style.css">
 </head> 
 <body>
-  <div class="sidebar">
+  <div class="sidebar"> 
     <button>+</button>
     <div class="icon" id="todo-icon">⭐</div>
     <div class="icon" id="calendar-icon">📅</div>
@@ -184,40 +181,61 @@
     const categoryIcon = document.getElementById("category-icon");
     const friendsIcon = document.getElementById("friends-icon");
   
+    function showView(view) {
+      todoMain.style.display = view === 'todo' ? "block" : "none";
+      calendarView.style.display = view === 'calendar' ? "block" : "none";
+      categoryView.style.display = view === 'category' ? "block" : "none";
+      friendsView.style.display = view === 'friends' ? "block" : "none";
+      localStorage.setItem('lastView', view);
+    }
+  
     todoIcon.addEventListener("click", () => {
-      todoMain.style.display = "block";
-      calendarView.style.display = "none";
-      categoryView.style.display = "none";
-      friendsView.style.display = "none";
+      showView('todo');
     });
   
     calendarIcon.addEventListener("click", () => {
-      todoMain.style.display = "none";
-      calendarView.style.display = "block";
-      categoryView.style.display = "none";
-      friendsView.style.display = "none";
+      showView('calendar');
     });
   
     categoryIcon.addEventListener("click", () => {
-      todoMain.style.display = "none";
-      calendarView.style.display = "none";
-      categoryView.style.display = "block";
-      friendsView.style.display = "none";
+      showView('category');
     });
 
     friendsIcon.addEventListener("click", () => {
-      todoMain.style.display = "none";
-      calendarView.style.display = "none";
-      categoryView.style.display = "none";
-      friendsView.style.display = "block";
+      showView('friends');
+    });
+
+    // 페이지 로드 시 마지막 뷰 복원
+    document.addEventListener('DOMContentLoaded', () => {
+      const lastView = localStorage.getItem('lastView') || 'todo';
+      showView(lastView);
     });
   </script>  
 
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
-  <script src="script.js"></script>
+  <!-- 유틸리티 함수 -->
+  <script src="js/utils.js"></script>
+  
+  <!-- 모달 관련 기능 -->
+  <script src="js/modal.js"></script>
+  
+  <!-- Firebase 관련 기능 -->
+  <script src="js/firebase.js"></script>
+  
+  <!-- 할 일 목록 관련 기능 -->
+  <script src="js/todo.js"></script>
+  
+  <!-- 캘린더 관련 기능 -->
+  <script src="js/calendar.js"></script>
+  
+  <!-- 카테고리 관련 기능 -->
+  <script src="js/category.js"></script>
+  
+  <!-- 친구 관련 기능 -->
+  <script src="js/friends.js"></script>
 
 </body>
 </html>
