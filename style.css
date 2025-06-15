@@ -473,3 +473,45 @@ li.completed span {
   opacity: 1 !important;
   background-color: rgba(0, 0, 0, 0.12);
 }
+
+/* 모바일 세로(핸드폰) */
+@media (max-width: 600px) and (orientation: portrait) {
+  .sidebar {
+    display: none;
+  }
+  .main {
+    margin-left: 0;
+    padding: 8px;
+  }
+  #calendar-container, #note-panel {
+    width: 100%;
+    padding: 8px;
+    border-radius: 0;
+  }
+  /* 기타 모바일에 맞는 스타일 */
+}
+
+/* 모바일 가로(핸드폰 landscape) */
+@media (max-width: 900px) and (orientation: landscape) {
+  .sidebar {
+    width: 60px;
+  }
+  .main {
+    margin-left: 70px;
+    padding: 10px;
+  }
+  /* 가로일 때는 PC와 비슷하게 */
+}
+
+/* PC 화면 */
+@media (min-width: 900px) {
+  .sidebar {
+    display: flex;
+    width: 80px;
+  }
+  .main {
+    margin-left: 100px;
+    padding: 20px;
+  }
+  /* PC 스타일 유지 */
+}

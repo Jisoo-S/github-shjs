@@ -235,7 +235,7 @@ function createCalendarCell(date) {
       border-radius: 8px;
       padding: 10px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      z-index: 1000;
+      z-index: 9999;
       min-width: 200px;
       max-width: 300px;
     `;
@@ -281,30 +281,31 @@ function createCalendarCell(date) {
     // 마우스 이벤트 처리
     cell.addEventListener('mouseenter', (e) => {
       updateTooltipContent();
+      document.body.appendChild(tooltip);
       tooltip.style.display = 'block';
       
-      // 툴팁 위치 계산
+      // 툴팁 위치 계산 (window 기준)
       const rect = cell.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const spaceRight = window.innerWidth - rect.right;
-      
-      if (spaceBelow >= 200) {
-        tooltip.style.top = '100%';
-        tooltip.style.left = '50%';
-        tooltip.style.transform = 'translateX(-50%)';
-      } else if (spaceRight >= 200) {
-        tooltip.style.top = '50%';
-        tooltip.style.left = '100%';
-        tooltip.style.transform = 'translateY(-50%)';
-      } else {
-        tooltip.style.bottom = '100%';
-        tooltip.style.left = '50%';
-        tooltip.style.transform = 'translateX(-50%)';
+      let top = rect.bottom + window.scrollY - 24;
+      let left = rect.left + window.scrollX + rect.width / 2 - tooltip.offsetWidth / 2;
+      // 화면 경계 체크
+      if (left < 0) left = 8;
+      if (left + tooltip.offsetWidth > window.innerWidth) left = window.innerWidth - tooltip.offsetWidth - 8;
+      if (top + tooltip.offsetHeight > window.innerHeight + window.scrollY) {
+        top = rect.top + window.scrollY - tooltip.offsetHeight - 8;
       }
+      if (top < 0) top = 8;
+      tooltip.style.left = left + 'px';
+      tooltip.style.top = top + 'px';
+      tooltip.style.position = 'absolute';
+      tooltip.style.zIndex = 9999;
     });
 
     cell.addEventListener('mouseleave', () => {
       tooltip.style.display = 'none';
+      if (tooltip.parentNode === document.body) {
+        document.body.removeChild(tooltip);
+      }
     });
 
     cell.appendChild(tooltip);

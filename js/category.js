@@ -62,15 +62,6 @@ function handleCategoryChange() {
         const input = document.createElement("input");
         input.type = "text";
         input.value = oldText;
-        
-        const dateInput = document.createElement("input");
-        dateInput.type = "date";
-        dateInput.value = oldDate;
-
-        const categorySelect = document.createElement("select");
-
-        input.type = "text";
-        input.value = oldText;
         input.style.fontSize = "14px";
         input.style.padding = "8px";
         input.style.borderRadius = "10px";
@@ -78,6 +69,7 @@ function handleCategoryChange() {
         input.style.width = "200px";
         input.style.marginRight = "10px";
 
+        const dateInput = document.createElement("input");
         dateInput.type = "date";
         dateInput.value = oldDate;
         dateInput.style.fontSize = "14px";
@@ -86,6 +78,7 @@ function handleCategoryChange() {
         dateInput.style.border = "1px solid #ccc";
         dateInput.style.marginRight = "10px";
 
+        const categorySelect = document.createElement("select");
         categorySelect.style.fontSize = "14px";
         categorySelect.style.padding = "8px";
         categorySelect.style.borderRadius = "10px";
@@ -161,6 +154,11 @@ function handleCategoryChange() {
           originalEditBtn.replaceWith(originalEditBtn.cloneNode(true));
           const refreshedEditBtn = originalButtonGroup.querySelector(".edit-btn");
           refreshedEditBtn.textContent = "✏️";
+          refreshedEditBtn.addEventListener("click", () => {
+            editTodo(originalLi, originalLeft, originalSpan, originalCheckbox, updatedDate, originalButtonGroup);
+          });
+
+          refreshedEditBtn.onclick = null;
           refreshedEditBtn.addEventListener("click", () => {
             editTodo(originalLi, originalLeft, originalSpan, originalCheckbox, updatedDate, originalButtonGroup);
           });
