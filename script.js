@@ -30,7 +30,11 @@ function getToday() {
     checkbox.type = "checkbox";
     checkbox.addEventListener("change", () => {
       li.classList.toggle("completed");
+<<<<<<< HEAD
       saveTodoList();
+=======
+      saveTodoList(); // 체크박스 변경 시 저장
+>>>>>>> 88efc9bc53925acaab969da9d8070f3e43023d5e
     });
     
 
@@ -129,6 +133,7 @@ function getToday() {
 
     renderList();  
     saveTodoList(); // 추가 시 저장
+<<<<<<< HEAD
 
     // 달력 뷰가 표시 중이면 즉시 업데이트
     if (document.getElementById("calendar-view").style.display === "block") {
@@ -140,6 +145,8 @@ function getToday() {
         showTodayView();
       }
     }
+=======
+>>>>>>> 88efc9bc53925acaab969da9d8070f3e43023d5e
   }
 
   function renderList() {
@@ -761,6 +768,7 @@ async function logout() {
   } catch (error) {
     showModal(error.message);
   }
+<<<<<<< HEAD
 }
 
 // 사용자 프로필 초기화
@@ -779,6 +787,26 @@ async function initializeUserProfile(user) {
   }
 }
 
+=======
+}
+
+// 사용자 프로필 초기화
+async function initializeUserProfile(user) {
+  const userProfile = {
+    email: user.email,
+    displayName: user.email.split('@')[0],
+    photoURL: `https://api.dicebear.com/6.x/initials/svg?seed=${user.email}`,
+    friends: []
+  };
+
+  try {
+    await firebase.firestore().collection('users').doc(user.uid).set(userProfile);
+  } catch (error) {
+    console.error('Error initializing user profile:', error);
+  }
+}
+
+>>>>>>> 88efc9bc53925acaab969da9d8070f3e43023d5e
 // UI 업데이트
 function updateUserUI() {
   const loginForm = document.getElementById('login-form');
@@ -1303,7 +1331,12 @@ function updateCalendarCell(date) {
             border-radius: 50%;
             position: absolute;
             bottom: 4px;
+<<<<<<< HEAD
             right: 4px;
+=======
+            left: 50%;
+            transform: translateX(-50%);
+>>>>>>> 88efc9bc53925acaab969da9d8070f3e43023d5e
           `;
           cell.appendChild(indicator);
         }
@@ -1323,6 +1356,7 @@ function createCalendarCell(date) {
   cell.style.position = "relative";
   cell.style.cursor = "pointer";
   cell.style.userSelect = "none";
+<<<<<<< HEAD
   cell.style.minHeight = "40px";
   
   // 날짜 형식 수정 (시간대 문제 해결)
@@ -1425,6 +1459,15 @@ function createCalendarCell(date) {
   }
   
   // 메모 표시기 추가 (오른쪽 하단)
+=======
+  
+  const formattedDate = date.toISOString().split('T')[0];
+  cell.dataset.date = formattedDate;
+  
+  cell.textContent = date.getDate();
+  
+  // 메모 표시기 추가
+>>>>>>> 88efc9bc53925acaab969da9d8070f3e43023d5e
   const memo = getMemo(formattedDate);
   if (memo.length > 0) {
     const indicator = document.createElement('div');
@@ -1436,7 +1479,12 @@ function createCalendarCell(date) {
       border-radius: 50%;
       position: absolute;
       bottom: 4px;
+<<<<<<< HEAD
       right: 4px;
+=======
+      left: 50%;
+      transform: translateX(-50%);
+>>>>>>> 88efc9bc53925acaab969da9d8070f3e43023d5e
     `;
     cell.appendChild(indicator);
   }
@@ -1667,6 +1715,7 @@ function saveTodoList() {
     pinned: li.dataset.pinned === "true"
   }));
   localStorage.setItem("todoList", JSON.stringify(todos));
+<<<<<<< HEAD
   
   // 달력 뷰가 표시 중이면 달력 업데이트
   if (document.getElementById("calendar-view").style.display === "block") {
@@ -1678,6 +1727,8 @@ function saveTodoList() {
       showTodayView();
     }
   }
+=======
+>>>>>>> 88efc9bc53925acaab969da9d8070f3e43023d5e
 }
 
 // 투두리스트 불러오기 함수
