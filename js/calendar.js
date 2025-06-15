@@ -1,9 +1,19 @@
+// Firebase 관련 함수 임포트
+import { getCurrentUser, getTodosFromFirebase } from './firebase.js';
+
 let currentDate = new Date();
 let calendarMode = "month";
+let todos = []; // 할 일 목록을 저장할 배열
 
 // 캘린더 뷰 초기화 함수
-function initializeCalendar() {
-  showMonthView();
+async function initializeCalendar() {
+  try {
+    // Firebase에서 할 일 목록 로드
+    todos = await getTodosFromFirebase();
+    showMonthView();
+  } catch (error) {
+    console.error("캘린더 초기화 중 오류:", error);
+  }
 }  
  
 function showMonthView() {
@@ -163,14 +173,13 @@ function formatDate(date) {
 }
 
 function getTodosForDate(date) {
-  const todos = JSON.parse(localStorage.getItem('todoList') || '[]');
   const formattedDate = formatDate(date);
   return todos.filter(todo => todo.date === formattedDate);
 }
 
 function getPinnedTodosForDate(date) {
-  const todos = JSON.parse(localStorage.getItem('todoList') || '[]');
-  return todos.filter(todo => todo.date === date && todo.pinned);
+  const formattedDate = formatDate(date);
+  return todos.filter(todo => todo.date === formattedDate && todo.pinned);
 }
 
 function areAllTodosCompleted(todos) {
@@ -359,7 +368,7 @@ function saveMemo(date, memo) {
   if (!memos[formattedDate]) {
     memos[formattedDate] = [];
   }
-  if (memo && !memos[formattedDate].some(m => m.text === memo)) {
+  if (memo) {
     memos[formattedDate].push({
       id: Date.now(),
       text: memo,
@@ -413,6 +422,23 @@ function showMemoModal(date) {
     }
   });
 
+  // ESC 키로 모달 닫기
+  const handleEscKey = (e) => {
+    if (e.key === 'Escape') {
+      document.body.removeChild(modal.modal);
+      document.removeEventListener('keydown', handleEscKey);
+    }
+  };
+  document.addEventListener('keydown', handleEscKey);
+
+  // 모달 외부 클릭 시 닫기
+  modal.modal.addEventListener('click', (e) => {
+    if (e.target === modal.modal) {
+      document.body.removeChild(modal.modal);
+      document.removeEventListener('keydown', handleEscKey);
+    }
+  });
+
   // 메모 목록 표시
   const memoList = document.createElement('div');
   memoList.style.maxHeight = '300px';
@@ -423,57 +449,76 @@ function showMemoModal(date) {
   memoList.style.borderRadius = '10px';
   memoList.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
 
-  memos.forEach(memo => {
-    const memoItem = document.createElement('div');
-    memoItem.style.display = 'flex';
-    memoItem.style.justifyContent = 'space-between';
-    memoItem.style.alignItems = 'center';
-    memoItem.style.padding = '12px';
-    memoItem.style.marginBottom = '8px';
-    memoItem.style.backgroundColor = '#f8f8f8';
-    memoItem.style.borderRadius = '8px';
-    memoItem.style.transition = 'background-color 0.2s';
+  // 메모 개수 업데이트 함수
+  const updateMemoCount = () => {
+    const currentMemos = getMemo(formattedDate);
+    const countElement = modal.modal.querySelector('div[style*="font-size: 12px"]');
+    if (countElement) {
+      countElement.innerHTML = `메모 ${currentMemos.length}개`;
+    }
+  };
 
-    const memoText = document.createElement('span');
-    memoText.textContent = memo.text;
-    memoText.style.flex = '1';
-    memoText.style.marginRight = '10px';
-    memoText.style.fontSize = '14px';
-    memoText.style.color = '#333';
+  // 메모 목록 업데이트 함수
+  const updateMemoList = () => {
+    const currentMemos = getMemo(formattedDate);
+    memoList.innerHTML = '';
+    
+    currentMemos.forEach(memo => {
+      const memoItem = document.createElement('div');
+      memoItem.style.display = 'flex';
+      memoItem.style.justifyContent = 'space-between';
+      memoItem.style.alignItems = 'center';
+      memoItem.style.padding = '12px';
+      memoItem.style.marginBottom = '8px';
+      memoItem.style.backgroundColor = '#f8f8f8';
+      memoItem.style.borderRadius = '8px';
+      memoItem.style.transition = 'background-color 0.2s';
 
-    const deleteBtn = document.createElement('button');
-    deleteBtn.textContent = '🗑️';
-    deleteBtn.style.border = 'none';
-    deleteBtn.style.background = 'none';
-    deleteBtn.style.cursor = 'pointer';
-    deleteBtn.style.opacity = '0.5';
-    deleteBtn.style.transition = 'opacity 0.2s';
-    deleteBtn.style.padding = '4px';
-    deleteBtn.style.borderRadius = '4px';
-    deleteBtn.onmouseover = () => {
-      deleteBtn.style.opacity = '1';
-      deleteBtn.style.backgroundColor = '#ff9f9f';
-    };
-    deleteBtn.onmouseout = () => {
+      const memoText = document.createElement('span');
+      memoText.textContent = memo.text;
+      memoText.style.flex = '1';
+      memoText.style.marginRight = '10px';
+      memoText.style.fontSize = '14px';
+      memoText.style.color = '#333';
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = '🗑️';
+      deleteBtn.style.border = 'none';
+      deleteBtn.style.background = 'none';
+      deleteBtn.style.cursor = 'pointer';
       deleteBtn.style.opacity = '0.5';
-      deleteBtn.style.backgroundColor = 'transparent';
-    };
-    deleteBtn.onclick = () => {
-      deleteMemo(formattedDate, memo.id);
-      memoItem.remove();
-      if (calendarMode === 'month') {
-        showMonthView();
-      } else if (calendarMode === 'week') {
-        showWeekView();
-      } else if (calendarMode === 'today') {
-        showTodayView();
-      }
-    };
+      deleteBtn.style.transition = 'opacity 0.2s';
+      deleteBtn.style.padding = '4px';
+      deleteBtn.style.borderRadius = '4px';
+      deleteBtn.onmouseover = () => {
+        deleteBtn.style.opacity = '1';
+        deleteBtn.style.backgroundColor = '#ff9f9f';
+      };
+      deleteBtn.onmouseout = () => {
+        deleteBtn.style.opacity = '0.5';
+        deleteBtn.style.backgroundColor = 'transparent';
+      };
+      deleteBtn.onclick = () => {
+        deleteMemo(formattedDate, memo.id);
+        updateMemoList();
+        updateMemoCount();
+        if (calendarMode === 'month') {
+          showMonthView();
+        } else if (calendarMode === 'week') {
+          showWeekView();
+        } else if (calendarMode === 'today') {
+          showTodayView();
+        }
+      };
 
-    memoItem.appendChild(memoText);
-    memoItem.appendChild(deleteBtn);
-    memoList.appendChild(memoItem);
-  });
+      memoItem.appendChild(memoText);
+      memoItem.appendChild(deleteBtn);
+      memoList.appendChild(memoItem);
+    });
+  };
+
+  // 초기 메모 목록 표시
+  updateMemoList();
 
   // 모달 컨텐츠에 메모 목록 추가
   const modalContent = modal.modal.querySelector('div');
@@ -500,6 +545,24 @@ function showMemoModal(date) {
     if (button.textContent === '저장') {
       button.style.backgroundColor = '#ffe08a';
       button.style.color = '#333';
+      // 저장 버튼 클릭 시 모달 닫히지 않도록 수정
+      button.onclick = (e) => {
+        e.preventDefault();
+        const input = modalDiv.querySelector('input');
+        if (input && input.value.trim()) {
+          saveMemo(formattedDate, input.value.trim());
+          input.value = '';
+          updateMemoList();
+          updateMemoCount();
+          if (calendarMode === 'month') {
+            showMonthView();
+          } else if (calendarMode === 'week') {
+            showWeekView();
+          } else if (calendarMode === 'today') {
+            showTodayView();
+          }
+        }
+      };
     } else if (button.textContent === '닫기') {
       button.style.backgroundColor = '#ff9f9f';
       button.style.color = '#333';
@@ -519,13 +582,138 @@ function showMemoModal(date) {
     input.style.fontSize = '14px';
     input.style.boxSizing = 'border-box';
     input.style.outline = 'none';
-    // 엔터키로 저장
+    
+    // 엔터키로 저장 (모달은 닫지 않음)
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
-        modal.modal.querySelector('button').click();
+        const value = input.value.trim();
+        if (value) {
+          saveMemo(formattedDate, value);
+          input.value = ''; // 입력창만 초기화
+          updateMemoList(); // 메모 목록 업데이트
+          updateMemoCount(); // 메모 개수 업데이트
+          if (calendarMode === 'month') {
+            showMonthView();
+          } else if (calendarMode === 'week') {
+            showWeekView();
+          } else if (calendarMode === 'today') {
+            showTodayView();
+          }
+        }
       }
     });
   }
+}
+
+// 커스텀 모달 함수
+function showCustomModal({ title, message, showInput = false, inputType = "text", inputPlaceholder = "", confirmText = "확인", cancelText = "취소", onConfirm }) {
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  `;
+
+  const modalContent = document.createElement('div');
+  modalContent.style.cssText = `
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    width: 400px;
+    max-width: 90%;
+  `;
+
+  const titleElement = document.createElement('h3');
+  titleElement.textContent = title;
+  titleElement.style.cssText = `
+    margin: 0 0 10px 0;
+    font-size: 18px;
+    color: #333;
+  `;
+
+  const messageElement = document.createElement('div');
+  messageElement.innerHTML = message;
+  messageElement.style.cssText = `
+    margin-bottom: 20px;
+    color: #666;
+  `;
+
+  modalContent.appendChild(titleElement);
+  modalContent.appendChild(messageElement);
+
+  let inputElement;
+  if (showInput) {
+    inputElement = document.createElement('input');
+    inputElement.type = inputType;
+    inputElement.placeholder = inputPlaceholder;
+    inputElement.style.cssText = `
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-sizing: border-box;
+    `;
+    modalContent.appendChild(inputElement);
+  }
+
+  const buttonContainer = document.createElement('div');
+  buttonContainer.style.cssText = `
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  `;
+
+  const confirmButton = document.createElement('button');
+  confirmButton.textContent = confirmText;
+  confirmButton.style.cssText = `
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    background: #ffe08a;
+    color: #333;
+    cursor: pointer;
+  `;
+  confirmButton.onclick = () => {
+    if (onConfirm) {
+      onConfirm(inputElement ? inputElement.value : null);
+    }
+    document.body.removeChild(modal);
+  };
+
+  const cancelButton = document.createElement('button');
+  cancelButton.textContent = cancelText;
+  cancelButton.style.cssText = `
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    background: #ff9f9f;
+    color: #333;
+    cursor: pointer;
+  `;
+  cancelButton.onclick = () => {
+    document.body.removeChild(modal);
+  };
+
+  buttonContainer.appendChild(cancelButton);
+  buttonContainer.appendChild(confirmButton);
+  modalContent.appendChild(buttonContainer);
+
+  modal.appendChild(modalContent);
+  document.body.appendChild(modal);
+
+  if (inputElement) {
+    inputElement.focus();
+  }
+
+  return { modal, input: inputElement };
 }
 
 // 이벤트 리스너
