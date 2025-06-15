@@ -15,7 +15,7 @@ body {
   align-items: center;
   position: fixed;
 }
-
+ 
 .sidebar button, .sidebar .icon {
   margin: 20px 0;
   background: none;
@@ -330,10 +330,10 @@ li.completed span {
   cursor: pointer;
   font-weight: bold;
 }
-
+ 
 #modal-confirm {
   background-color: #ffe08a;
-}
+} 
 
 #modal-cancel {
   background-color: #ddd;
@@ -392,7 +392,7 @@ li.completed span {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 1px;
-  background-color: black;
+  background-color: rgb(255, 234, 234);
   border-radius: 10px;
   overflow: hidden;
 }

@@ -16,7 +16,7 @@
     <div class="icon" id="calendar-icon">📅</div>
     <div class="icon" id="category-icon">🏷️</div>
     <div class="icon" id="friends-icon">👍</div>
-  </div>
+  </div> 
   
 
   <div class="main">
@@ -26,8 +26,8 @@
       <div class="buttons">
         <button id="toggle-completed">📌 Show / Hide</button>
         <button>🚶 12 mins from hotel</button>
-      </div>
-    </div>
+      </div> 
+    </div>  
 
     <div class="input-section">
       <input type="text" id="todo-input" placeholder="Add a task..." />
@@ -125,14 +125,41 @@
 
   <div id="friends-view" style="display: none; padding: 20px; margin-left: 100px;">
     <h2 style="font-size: 28px;">Friends</h2>
+    
+    <!-- 로그인 폼 -->
     <div id="login-form">
-      <input type="email" id="login-email" placeholder="Email" />
-      <input type="password" id="login-password" placeholder="Password" />
-      <button onclick="login()">Login</button>
-      <button onclick="signup()">Sign Up</button>
-      <button onclick="logout()">Logout</button>
+      <div class="profile-circle">
+        <img id="profile-image" src="https://via.placeholder.com/100" alt="Profile" 
+          style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 20px;">
+      </div>
+      <input type="email" id="login-email" placeholder="Email" 
+        style="width: 100%; max-width: 300px; padding: 10px; margin: 5px 0; border-radius: 20px; border: 1px solid #ddd;" />
+      <input type="password" id="login-password" placeholder="Password" 
+        style="width: 100%; max-width: 300px; padding: 10px; margin: 5px 0; border-radius: 20px; border: 1px solid #ddd;" />
+      <div style="margin-top: 10px;">
+        <button onclick="login()" style="padding: 8px 20px; border-radius: 20px; border: none; background: #ffcc70; margin: 5px;">Login</button>
+        <button onclick="signup()" style="padding: 8px 20px; border-radius: 20px; border: none; background: #e0e0e0; margin: 5px;">Sign Up</button>
+        <button onclick="logout()" style="padding: 8px 20px; border-radius: 20px; border: none; background: #ff9f9f; margin: 5px;">Logout</button>
+      </div>
     </div>
-    <div id="user-info" style="margin-top: 20px;"></div>
+
+    <!-- 사용자 정보 및 친구 목록 -->
+    <div id="user-info" style="margin-top: 20px;">
+      <div id="friends-list" style="margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px;">
+        <!-- 친구 프로필은 JavaScript에서 동적으로 추가됨 -->
+      </div>
+    </div>
+
+    <!-- 친구의 홈 화면 -->
+    <div id="friend-home" style="display: none; margin-top: 20px;">
+      <div class="friend-header" style="display: flex; align-items: center; margin-bottom: 20px;">
+        <button onclick="backToFriendsList()" style="padding: 5px 15px; border-radius: 15px; border: none; background: #e0e0e0; margin-right: 15px;">← Back</button>
+        <h3 id="friend-name" style="margin: 0;">Friend's Home</h3>
+      </div>
+      <div id="friend-todos" style="background: #f5f5f5; border-radius: 16px; padding: 20px;">
+        <!-- 친구의 할 일 목록이 여기에 표시됨 -->
+      </div>
+    </div>
   </div>
 
   <div id="modal-overlay" class="hidden">
@@ -188,6 +215,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
   <script src="script.js"></script>
 

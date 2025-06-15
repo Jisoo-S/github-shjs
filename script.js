@@ -30,6 +30,7 @@ function getToday() {
     checkbox.type = "checkbox";
     checkbox.addEventListener("change", () => {
       li.classList.toggle("completed");
+      saveTodoList();
     });
     
 
@@ -105,6 +106,7 @@ function getToday() {
     deleteBtn.style.cursor = "pointer";
     deleteBtn.addEventListener("click", () => {
       li.remove();
+      saveTodoList(); // 삭제 시 저장
     });
   
     const buttonGroup = document.createElement("div");
@@ -126,6 +128,18 @@ function getToday() {
     categorySelect.value = "";
 
     renderList();  
+    saveTodoList(); // 추가 시 저장
+
+    // 달력 뷰가 표시 중이면 즉시 업데이트
+    if (document.getElementById("calendar-view").style.display === "block") {
+      if (calendarMode === "month") {
+        showMonthView();
+      } else if (calendarMode === "week") {
+        showWeekView();
+      } else if (calendarMode === "today") {
+        showTodayView();
+      }
+    }
   }
 
   function renderList() {
@@ -245,13 +259,25 @@ function getToday() {
       }
 
       cloned.replaceWith(cloned.cloneNode(true));
-      const restoredBtn = buttonGroup.querySelector(".edit-btn");
-      restoredBtn.textContent = "✏️";
-      restoredBtn.addEventListener("click", () => {
+      const refreshedEditBtn = buttonGroup.querySelector(".edit-btn");
+      refreshedEditBtn.textContent = "✏️";
+      refreshedEditBtn.addEventListener("click", () => {
         editTodo(li, left, newSpan, checkbox, selectedDate, buttonGroup);
       });
 
       renderList();
+      saveTodoList(); // 저장 함수 호출
+
+      // 달력 뷰가 표시 중이면 즉시 업데이트
+      if (document.getElementById("calendar-view").style.display === "block") {
+        if (calendarMode === "month") {
+          showMonthView();
+        } else if (calendarMode === "week") {
+          showWeekView();
+        } else if (calendarMode === "today") {
+          showTodayView();
+        }
+      }
 
       const isCategoryViewVisible = document.getElementById("category-view").style.display === "block";
       if (isCategoryViewVisible) {
@@ -297,34 +323,42 @@ function getToday() {
       li.style.display = "flex";
     });
 
-    document.querySelector(".main").style.display = "block";               // To-do 보이기
-    document.getElementById("calendar-view").style.display = "none";      // 캘린더 숨기기
+    document.querySelector(".main").style.display = "block";               
+    document.getElementById("calendar-view").style.display = "none";      
     document.getElementById("category-view").style.display = "none";
     document.getElementById("friends-view").style.display = "none";
 
+    // 현재 뷰 저장
+    localStorage.setItem("currentView", "todo");
   });
 
 // 📅 아이콘 (캘린더 화면 전환)
   icons[1].addEventListener("click", () => {
-    document.querySelector(".main").style.display = "none";               // To-do 숨기기
-    document.getElementById("calendar-view").style.display = "block";     // 캘린더 보이기
-    const calendarSection = document.querySelector(".calendar-section");
-    if (calendarSection) calendarSection.style.display = "none";          // 다른 캘린더 섹션도 숨기기
+    document.querySelector(".main").style.display = "none";               
+    document.getElementById("calendar-view").style.display = "block";     
+    document.getElementById("category-view").style.display = "none";
+    document.getElementById("friends-view").style.display = "none";
+    
+    // 현재 뷰 저장
+    localStorage.setItem("currentView", "calendar");
   });
 
   let showCompleted = true;
 
   categoryIcon.addEventListener("click", () => {
-    todoMain.style.display = "none";
-    calendarView.style.display = "none";
-    categoryView.style.display = "block";
-    friendsView.style.display = "none";
+    document.querySelector(".main").style.display = "none";
+    document.getElementById("calendar-view").style.display = "none";
+    document.getElementById("category-view").style.display = "block";
+    document.getElementById("friends-view").style.display = "none";
   
+    // 현재 뷰 저장
+    localStorage.setItem("currentView", "category");
+
     const selectedCategory = document.getElementById("category-edit-select").value;
     if (selectedCategory) {
-      handleCategoryChange(); // 선택된 항목 다시 보여줌
+      handleCategoryChange();
     } else {
-      document.getElementById("category-todo-result").innerHTML = ""; // 선택 안 됐으면 초기화
+      document.getElementById("category-todo-result").innerHTML = "";
     }
   });
   
@@ -674,59 +708,228 @@ function handleCategoryChange() {
 
 // Firebase 초기화
 const firebaseConfig = {
-  apiKey: "AIzaSyADIDRqmGCI6PGofskRtVnrsTK2xHpoqEw",
-  authDomain: "logintodo-ff777.firebaseapp.com",
-  projectId: "logintodo-ff777",
-  storageBucket: "logintodo-ff777.appspot.com",
-  messagingSenderId: "1067689858137",
-  appId: "1:1067689858137:web:c2de1fdbe937bfb2104d48",
-  measurementId: "G-0SYF713XKM"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 
-// 회원가입
-function signup() {
-  const email = document.getElementById("login-email").value;
-  const password = document.getElementById("login-password").value;
-  auth.createUserWithEmailAndPassword(email, password)
-    .then((userCredential) => {
-      alert("회원가입 성공!");
-    })
-    .catch((error) => {
-      alert(error.message);
-    });
-}
+// 사용자 상태 관리
+let currentUser = null;
 
-// 로그인
-function login() {
-  const email = document.getElementById("login-email").value;
-  const password = document.getElementById("login-password").value;
-  auth.signInWithEmailAndPassword(email, password)
-    .then((userCredential) => {
-      alert("로그인 성공!");
-    })
-    .catch((error) => {
-      alert(error.message);
-    });
-}
- 
-// 로그아웃
-function logout() {
-  auth.signOut().then(() => {
-    alert("로그아웃 완료");
-  });
-}
+// 로그인 함수
+async function login() {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
 
-// 로그인 상태 확인
-auth.onAuthStateChanged((user) => {
-  const userInfo = document.getElementById("user-info");
-  if (user) {
-    userInfo.innerText = `현재 로그인된 사용자: ${user.email}`;
-  } else {
-    userInfo.innerText = "로그인 안됨";
+  try {
+    const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+    currentUser = userCredential.user;
+    updateUserUI();
+    loadFriendsList();
+  } catch (error) {
+    showModal(error.message);
   }
+}
+
+// 회원가입 함수
+async function signup() {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+
+  try {
+    const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+    currentUser = userCredential.user;
+    await initializeUserProfile(currentUser);
+    updateUserUI();
+  } catch (error) {
+    showModal(error.message);
+  }
+}
+
+// 로그아웃 함수
+async function logout() {
+  try {
+    await firebase.auth().signOut();
+    currentUser = null;
+    updateUserUI();
+  } catch (error) {
+    showModal(error.message);
+  }
+}
+
+// 사용자 프로필 초기화
+async function initializeUserProfile(user) {
+  const userProfile = {
+    email: user.email,
+    displayName: user.email.split('@')[0],
+    photoURL: `https://api.dicebear.com/6.x/initials/svg?seed=${user.email}`,
+    friends: []
+  };
+
+  try {
+    await firebase.firestore().collection('users').doc(user.uid).set(userProfile);
+  } catch (error) {
+    console.error('Error initializing user profile:', error);
+  }
+}
+
+// UI 업데이트
+function updateUserUI() {
+  const loginForm = document.getElementById('login-form');
+  const userInfo = document.getElementById('user-info');
+  const profileImage = document.getElementById('profile-image');
+
+  if (currentUser) {
+    loginForm.style.display = 'none';
+    userInfo.style.display = 'block';
+    profileImage.src = currentUser.photoURL || `https://api.dicebear.com/6.x/initials/svg?seed=${currentUser.email}`;
+    loadFriendsList();
+  } else {
+    loginForm.style.display = 'block';
+    userInfo.style.display = 'none';
+    document.getElementById('friends-list').innerHTML = '';
+    document.getElementById('friend-home').style.display = 'none';
+  }
+}
+
+// 친구 목록 로드
+async function loadFriendsList() {
+  if (!currentUser) return;
+
+  try {
+    const userDoc = await firebase.firestore().collection('users').doc(currentUser.uid).get();
+    const userData = userDoc.data();
+    const friendsList = document.getElementById('friends-list');
+    friendsList.innerHTML = '';
+
+    if (userData.friends && userData.friends.length > 0) {
+      for (const friendId of userData.friends) {
+        const friendDoc = await firebase.firestore().collection('users').doc(friendId).get();
+        const friendData = friendDoc.data();
+        
+        const friendElement = createFriendElement(friendId, friendData);
+        friendsList.appendChild(friendElement);
+      }
+    } else {
+      friendsList.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">아직 친구가 없습니다.</p>';
+    }
+  } catch (error) {
+    console.error('Error loading friends list:', error);
+  }
+}
+
+// 친구 프로필 요소 생성
+function createFriendElement(friendId, friendData) {
+  const friendDiv = document.createElement('div');
+  friendDiv.className = 'friend-profile';
+  friendDiv.style.cssText = `
+    background: white;
+    border-radius: 16px;
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  `;
+
+  friendDiv.innerHTML = `
+    <img src="${friendData.photoURL}" alt="${friendData.displayName}" 
+      style="width: 60px; height: 60px; border-radius: 50%; margin-bottom: 10px;">
+    <div style="font-weight: bold;">${friendData.displayName}</div>
+  `;
+
+  friendDiv.addEventListener('click', () => showFriendHome(friendId, friendData));
+  
+  friendDiv.addEventListener('mouseenter', () => {
+    friendDiv.style.transform = 'translateY(-5px)';
+  });
+  
+  friendDiv.addEventListener('mouseleave', () => {
+    friendDiv.style.transform = 'translateY(0)';
+  });
+
+  return friendDiv;
+}
+
+// 친구의 홈 화면 표시
+async function showFriendHome(friendId, friendData) {
+  const friendsList = document.getElementById('friends-list');
+  const friendHome = document.getElementById('friend-home');
+  const friendName = document.getElementById('friend-name');
+  const friendTodos = document.getElementById('friend-todos');
+
+  friendsList.style.display = 'none';
+  friendHome.style.display = 'block';
+  friendName.textContent = `${friendData.displayName}의 할 일`;
+
+  try {
+    const todosSnapshot = await firebase.firestore()
+      .collection('users')
+      .doc(friendId)
+      .collection('todos')
+      .get();
+
+    friendTodos.innerHTML = '';
+    
+    if (todosSnapshot.empty) {
+      friendTodos.innerHTML = '<p style="text-align: center;">할 일이 없습니다.</p>';
+      return;
+    }
+
+    todosSnapshot.forEach(doc => {
+      const todo = doc.data();
+      const todoElement = createFriendTodoElement(todo);
+      friendTodos.appendChild(todoElement);
+    });
+  } catch (error) {
+    console.error('Error loading friend todos:', error);
+    friendTodos.innerHTML = '<p style="text-align: center;">할 일을 불러오는데 실패했습니다.</p>';
+  }
+}
+
+// 친구의 할 일 요소 생성
+function createFriendTodoElement(todo) {
+  const todoDiv = document.createElement('div');
+  todoDiv.style.cssText = `
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  `;
+
+  todoDiv.innerHTML = `
+    <div>
+      <div style="font-weight: bold;">${todo.text}</div>
+      <div style="font-size: 12px; color: #666; margin-top: 5px;">
+        📅 ${todo.date}
+        ${todo.category ? `<span style="margin-left: 10px;">${todo.category}</span>` : ''}
+      </div>
+    </div>
+    ${todo.completed ? '<span style="color: #4CAF50;">✓ 완료</span>' : ''}
+  `;
+
+  return todoDiv;
+}
+
+// 친구 목록으로 돌아가기
+function backToFriendsList() {
+  document.getElementById('friends-list').style.display = 'grid';
+  document.getElementById('friend-home').style.display = 'none';
+}
+
+// Firebase 인증 상태 변경 감지
+firebase.auth().onAuthStateChanged((user) => {
+  currentUser = user;
+  updateUserUI();
 });
 
 function showModal(message, withInput = false, callback) {
@@ -813,9 +1016,9 @@ const noteInput = document.getElementById('note-input');
 
 
 function showMonthView() {
-  calendarMode = "month"; // ← 이거 추가
+  calendarMode = "month";
 
-  const now = new Date(currentDate); // ← 기존 currentDate를 사용해야 함
+  const now = new Date(currentDate);
   const year = now.getFullYear();
   const monthIndex = now.getMonth();
   const monthName = now.toLocaleString('default', { month: 'long' });
@@ -829,16 +1032,35 @@ function showMonthView() {
   grid.style.gridTemplateColumns = "repeat(7, 1fr)";
   grid.innerHTML = "";
 
+  // 요일 헤더 추가
+  const days = ['일', '월', '화', '수', '목', '금', '토'];
+  days.forEach(day => {
+    const header = document.createElement('div');
+    header.className = 'calendar-header';
+    header.textContent = day;
+    header.style.textAlign = 'center';
+    header.style.padding = '10px';
+    header.style.fontWeight = 'bold';
+    header.style.color = day === '일' ? '#ff6b6b' : day === '토' ? '#4dabf7' : 'inherit';
+    grid.appendChild(header);
+  });
+
   const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
 
   for (let i = 0; i < totalCells; i++) {
-    const cell = document.createElement("div");
-    cell.className = "calendar-cell";
-    if (i >= firstDay && i < firstDay + daysInMonth) {
-      const dayNum = i - firstDay + 1;
-      cell.textContent = dayNum;
+    if (i < firstDay) {
+      const emptyCell = document.createElement('div');
+      emptyCell.className = 'calendar-cell';
+      grid.appendChild(emptyCell);
+    } else if (i < firstDay + daysInMonth) {
+      const date = new Date(year, monthIndex, i - firstDay + 1);
+      const cell = createCalendarCell(date);
+      grid.appendChild(cell);
+    } else {
+      const emptyCell = document.createElement('div');
+      emptyCell.className = 'calendar-cell';
+      grid.appendChild(emptyCell);
     }
-    grid.appendChild(cell);
   }
 }
   
@@ -846,12 +1068,10 @@ function showWeekView() {
   calendarMode = "week";
 
   const startOfWeek = new Date(currentDate);
-  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + 1); // 월요일 시작
+  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
 
   const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6); // 일요일 끝
-
-  const currentMonth = currentDate.getMonth();
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
 
   const startWeekNum = getWeekNumberInMonth(startOfWeek);
   const endWeekNum = getWeekNumberInMonth(endOfWeek);
@@ -859,14 +1079,9 @@ function showWeekView() {
   const startMonth = startOfWeek.getMonth();
   const endMonth = endOfWeek.getMonth();
 
-  let label = "";
-
-  if (startMonth === endMonth) {
-    label = `${ordinal(startWeekNum)} week`;
-  } else {
-    // 예: "5th week / 1st week"
-    label = `${ordinal(startWeekNum)} week / ${ordinal(endWeekNum)} week`;
-  }
+  let label = startMonth === endMonth ? 
+    `${ordinal(startWeekNum)} week` : 
+    `${ordinal(startWeekNum)} week / ${ordinal(endWeekNum)} week`;
 
   document.getElementById("calendar-title").textContent = label;
 
@@ -874,34 +1089,42 @@ function showWeekView() {
   grid.innerHTML = "";
   grid.style.gridTemplateColumns = "repeat(7, 1fr)";
 
+  // 요일 헤더 추가
+  const days = ['일', '월', '화', '수', '목', '금', '토'];
+  days.forEach(day => {
+    const header = document.createElement('div');
+    header.className = 'calendar-header';
+    header.textContent = day;
+    header.style.textAlign = 'center';
+    header.style.padding = '10px';
+    header.style.fontWeight = 'bold';
+    header.style.color = day === '일' ? '#ff6b6b' : day === '토' ? '#4dabf7' : 'inherit';
+    grid.appendChild(header);
+  });
+
   for (let i = 0; i < 7; i++) {
-    const day = new Date(startOfWeek);
-    day.setDate(startOfWeek.getDate() + i);
-    const cell = document.createElement("div");
-    cell.className = "calendar-cell";
-    cell.textContent = day.getDate();
+    const date = new Date(startOfWeek);
+    date.setDate(startOfWeek.getDate() + i);
+    const cell = createCalendarCell(date);
     grid.appendChild(cell);
   }
 }
 
-
 function showTodayView() {
   calendarMode = "today";
 
-  const dateStr = `${currentDate.getMonth() + 1}/${currentDate.getDate()}`;
+  const today = new Date(currentDate);
+  const dateStr = `${today.getMonth() + 1}/${today.getDate()}`;
   document.getElementById("calendar-title").textContent = dateStr;
 
   const grid = document.getElementById("calendar-grid");
   grid.innerHTML = "";
   grid.style.gridTemplateColumns = "1fr";
 
-  const cell = document.createElement("div");
-  cell.className = "calendar-cell";
-  cell.textContent = currentDate.getDate();
+  const cell = createCalendarCell(today);
+  cell.style.height = "200px";
   grid.appendChild(cell);
 }
-
-
 
 let currentDate = new Date();
 let calendarMode = "month"; // or 'week' or 'today'
@@ -942,7 +1165,6 @@ function goNext() {
   }
 }
 
-
 function getWeekNumberInMonth(date) {
   const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
   const firstDay = (firstDayOfMonth.getDay() + 6) % 7; // 월요일: 0, 일요일: 6
@@ -950,7 +1172,6 @@ function getWeekNumberInMonth(date) {
 
   return Math.ceil((day + firstDay) / 7);
 }
-
 
 function ordinal(n) {
   const s = ["th", "st", "nd", "rd"];
@@ -974,4 +1195,562 @@ document.addEventListener("DOMContentLoaded", () => {
     currentDate = new Date();
     showTodayView();
   });
+});
+
+// 캘린더 메모 관련 함수들
+function saveMemo(date, memo) {
+  const memos = JSON.parse(localStorage.getItem('calendar_memos') || '{}');
+  if (!memos[date]) {
+    memos[date] = [];
+  }
+  if (memo) {
+    memos[date].push({
+      id: Date.now(),
+      text: memo,
+      date: new Date().toISOString()
+    });
+  }
+  localStorage.setItem('calendar_memos', JSON.stringify(memos));
+}
+
+function getMemo(date) {
+  const memos = JSON.parse(localStorage.getItem('calendar_memos') || '{}');
+  return memos[date] || [];
+}
+
+function deleteMemo(date, memoId) {
+  const memos = JSON.parse(localStorage.getItem('calendar_memos') || '{}');
+  if (memos[date]) {
+    memos[date] = memos[date].filter(memo => memo.id !== memoId);
+    if (memos[date].length === 0) {
+      delete memos[date];
+    }
+    localStorage.setItem('calendar_memos', JSON.stringify(memos));
+  }
+}
+
+function showMemoModal(date) {
+  const formattedDate = date.toISOString().split('T')[0];
+  const memos = getMemo(formattedDate);
+  
+  const message = `
+    <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+      <strong>${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일</strong>
+    </div>
+    <div id="memo-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 10px;">
+      ${memos.map(memo => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 8px; background: #f5f5f5; border-radius: 8px;">
+          <div style="flex: 1; margin-right: 10px;">${memo.text}</div>
+          <button class="memo-delete-btn" data-id="${memo.id}" style="background: none; border: none; cursor: pointer; font-size: 16px; opacity: 0.5;">🗑️</button>
+        </div>
+      `).join('')}
+    </div>
+    <textarea id="memo-textarea" 
+      style="width: 100%; height: 100px; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; resize: none;"
+      placeholder="새 메모를 입력하세요..."></textarea>
+  `;
+
+  showModal(message, false, (confirmed) => {
+    if (confirmed) {
+      const memo = document.getElementById('memo-textarea').value.trim();
+      if (memo) {
+        saveMemo(formattedDate, memo);
+        updateCalendarCell(date);
+      }
+    }
+  });
+
+  setTimeout(() => {
+    // 삭제 버튼 이벤트 리스너 추가
+    document.querySelectorAll('.memo-delete-btn').forEach(btn => {
+      btn.addEventListener('mouseover', () => btn.style.opacity = '1');
+      btn.addEventListener('mouseout', () => btn.style.opacity = '0.5');
+      btn.addEventListener('click', () => {
+        const memoId = parseInt(btn.dataset.id);
+        deleteMemo(formattedDate, memoId);
+        updateCalendarCell(date);
+        showMemoModal(date); // 모달 새로고침
+      });
+    });
+
+    // textarea에 엔터키 이벤트 리스너 추가
+    const textarea = document.getElementById('memo-textarea');
+    textarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        document.getElementById('modal-confirm').click();
+      }
+    });
+  }, 100);
+}
+
+function updateCalendarCell(date) {
+  const formattedDate = date.toISOString().split('T')[0];
+  const memos = getMemo(formattedDate);
+  const cells = document.querySelectorAll('.calendar-cell');
+  
+  cells.forEach(cell => {
+    const cellDate = cell.dataset.date;
+    if (cellDate === formattedDate) {
+      if (memos.length > 0) {
+        if (!cell.querySelector('.memo-indicator')) {
+          const indicator = document.createElement('div');
+          indicator.className = 'memo-indicator';
+          indicator.style.cssText = `
+            width: 6px;
+            height: 6px;
+            background-color: #ffcc70;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+          `;
+          cell.appendChild(indicator);
+        }
+      } else {
+        const indicator = cell.querySelector('.memo-indicator');
+        if (indicator) {
+          indicator.remove();
+        }
+      }
+    }
+  });
+}
+
+function createCalendarCell(date) {
+  const cell = document.createElement("div");
+  cell.className = "calendar-cell";
+  cell.style.position = "relative";
+  cell.style.cursor = "pointer";
+  cell.style.userSelect = "none";
+  cell.style.minHeight = "40px";
+  
+  // 날짜 형식 수정 (시간대 문제 해결)
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const formattedDate = `${year}-${month}-${day}`;
+  cell.dataset.date = formattedDate;
+  
+  // 날짜 표시
+  const dateDiv = document.createElement("div");
+  dateDiv.textContent = date.getDate();
+  dateDiv.style.marginBottom = "4px";
+  cell.appendChild(dateDiv);
+  
+  // 해당 날짜의 할 일 표시
+  const todos = JSON.parse(localStorage.getItem("todoList") || "[]");
+  const dayTodos = todos.filter(todo => todo.date === formattedDate);
+  
+  if (dayTodos.length > 0) {
+    // 할 일이 있을 때 빨간 점 표시 (위쪽으로 이동)
+    const dot = document.createElement("div");
+    dot.style.cssText = `
+      width: 8px;
+      height: 8px;
+      background-color: #ff4d4d;
+      border-radius: 50%;
+      position: absolute;
+      top: 4px;
+      right: 4px;
+    `;
+    cell.appendChild(dot);
+
+    // 툴팁 생성
+    const tooltip = document.createElement("div");
+    tooltip.style.cssText = `
+      position: fixed;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 8px;
+      min-width: 200px;
+      max-width: 300px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      z-index: 1000;
+      display: none;
+    `;
+
+    // 툴팁 내용 생성
+    const tooltipContent = document.createElement("div");
+    tooltipContent.style.cssText = `
+      font-size: 12px;
+      color: #333;
+    `;
+
+    dayTodos.forEach(todo => {
+      const todoItem = document.createElement("div");
+      todoItem.style.cssText = `
+        padding: 4px 8px;
+        margin: 4px 0;
+        background: ${todo.completed ? '#e0e0e0' : '#fff3cd'};
+        border-radius: 4px;
+        ${todo.completed ? 'text-decoration: line-through;' : ''}
+      `;
+      todoItem.textContent = todo.text;
+      tooltipContent.appendChild(todoItem);
+    });
+
+    tooltip.appendChild(tooltipContent);
+    document.body.appendChild(tooltip); // body에 직접 추가
+
+    // 마우스 이벤트 처리
+    cell.addEventListener("mouseenter", (e) => {
+      const rect = cell.getBoundingClientRect();
+      const tooltipRect = tooltip.getBoundingClientRect();
+      
+      // 툴팁 위치 계산
+      let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+      let top = rect.top - tooltipRect.height - 10;
+      
+      // 화면 경계 체크
+      if (left < 10) left = 10;
+      if (left + tooltipRect.width > window.innerWidth - 10) {
+        left = window.innerWidth - tooltipRect.width - 10;
+      }
+      
+      // 위쪽에 공간이 없으면 아래쪽에 표시
+      if (top < 10) {
+        top = rect.bottom + 10;
+      }
+      
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+      tooltip.style.display = "block";
+    });
+
+    cell.addEventListener("mouseleave", () => {
+      tooltip.style.display = "none";
+    });
+  }
+  
+  // 메모 표시기 추가 (오른쪽 하단)
+  const memo = getMemo(formattedDate);
+  if (memo.length > 0) {
+    const indicator = document.createElement('div');
+    indicator.className = 'memo-indicator';
+    indicator.style.cssText = `
+      width: 6px;
+      height: 6px;
+      background-color: #ffcc70;
+      border-radius: 50%;
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+    `;
+    cell.appendChild(indicator);
+  }
+  
+  cell.addEventListener('click', () => {
+    showMemoModal(date);
+  });
+  
+  return cell;
+}
+
+// 노트 관련 함수들
+function saveNotes(notes) {
+  localStorage.setItem('calendar_notes', JSON.stringify(notes));
+}
+
+function getNotes() {
+  return JSON.parse(localStorage.getItem('calendar_notes') || '[]');
+}
+
+function addNote() {
+  const noteInput = document.getElementById('note-input');
+  const text = noteInput.value.trim();
+  const categorySelect = document.getElementById('note-category');
+  const category = categorySelect.value;
+  
+  if (!text) return;
+
+  const notes = getNotes();
+  const newNote = {
+    id: Date.now(),
+    text: text,
+    category: category,
+    completed: false,
+    date: new Date().toISOString()
+  };
+
+  notes.push(newNote);
+  saveNotes(notes);
+  renderNotes();
+  noteInput.value = '';
+}
+
+function toggleNoteComplete(id) {
+  const notes = getNotes();
+  const note = notes.find(n => n.id === id);
+  if (note) {
+    note.completed = !note.completed;
+    saveNotes(notes);
+    renderNotes();
+  }
+}
+
+function deleteNote(id) {
+  const notes = getNotes();
+  const filteredNotes = notes.filter(n => n.id !== id);
+  saveNotes(filteredNotes);
+  renderNotes();
+}
+
+function renderNotes() {
+  const noteList = document.getElementById('note-list');
+  const notes = getNotes();
+  const selectedCategory = document.getElementById('note-filter').value;
+  
+  // 필터링
+  let filteredNotes = notes;
+  if (selectedCategory) {
+    filteredNotes = filteredNotes.filter(note => note.category === selectedCategory);
+  }
+
+  // 정렬: 날짜 > 완료여부
+  filteredNotes.sort((a, b) => {
+    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    return new Date(b.date) - new Date(a.date);
+  });
+
+  noteList.innerHTML = '';
+  
+  filteredNotes.forEach(note => {
+    const li = document.createElement('li');
+    li.style.cssText = `
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      margin-bottom: 8px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+      ${note.completed ? 'opacity: 0.7;' : ''}
+    `;
+
+    // 체크박스
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = note.completed;
+    checkbox.style.cssText = `
+      margin-right: 12px;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    `;
+    checkbox.addEventListener('change', () => toggleNoteComplete(note.id));
+    li.appendChild(checkbox);
+
+    // 메모 내용
+    const content = document.createElement('div');
+    content.style.cssText = `
+      flex-grow: 1;
+      margin-right: 12px;
+    `;
+    
+    const text = document.createElement('div');
+    text.style.cssText = `
+      ${note.completed ? 'text-decoration: line-through;' : ''}
+      margin-bottom: 4px;
+    `;
+    text.textContent = note.text;
+    content.appendChild(text);
+
+    // 카테고리와 날짜 정보
+    const meta = document.createElement('div');
+    meta.style.cssText = `
+      font-size: 12px;
+      color: #666;
+      display: flex;
+      gap: 8px;
+    `;
+    
+    const categorySpan = document.createElement('span');
+    categorySpan.textContent = note.category;
+    categorySpan.style.cssText = `
+      background: #f0f0f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+    `;
+    meta.appendChild(categorySpan);
+
+    const dateSpan = document.createElement('span');
+    dateSpan.textContent = new Date(note.date).toLocaleDateString();
+    meta.appendChild(dateSpan);
+
+    content.appendChild(meta);
+    li.appendChild(content);
+
+    // 삭제 버튼
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = '🗑️';
+    deleteBtn.style.cssText = `
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      opacity: 0.5;
+      transition: opacity 0.2s;
+    `;
+    deleteBtn.addEventListener('mouseover', () => deleteBtn.style.opacity = '1');
+    deleteBtn.addEventListener('mouseout', () => deleteBtn.style.opacity = '0.5');
+    deleteBtn.addEventListener('click', () => deleteNote(note.id));
+    li.appendChild(deleteBtn);
+
+    noteList.appendChild(li);
+  });
+}
+
+// Notes 패널 초기화
+function initializeNotesPanel() {
+  const notePanel = document.getElementById('note-panel');
+  notePanel.innerHTML = `
+    <div style="margin-bottom: 20px;">
+      <div style="display: flex; gap: 8px;">
+        <select id="note-category" style="flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
+          <option value="📝 일반">📝 일반</option>
+          <option value="📚 공부">📚 공부</option>
+          <option value="🏃 운동">🏃 운동</option>
+          <option value="🛒 쇼핑">🛒 쇼핑</option>
+          <option value="💼 업무">💼 업무</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom: 20px;">
+      <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+        <input type="text" id="note-input" placeholder="새 메모..." 
+          style="flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
+        <button onclick="addNote()" 
+          style="padding: 8px 16px; background: #ffcc70; color: white; border: none; border-radius: 8px; cursor: pointer;">
+          추가
+        </button>
+      </div>
+    </div>
+    <div style="margin-bottom: 10px;">
+      <select id="note-filter" onchange="renderNotes()" 
+        style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
+        <option value="">모든 카테고리</option>
+        <option value="📝 일반">📝 일반</option>
+        <option value="📚 공부">📚 공부</option>
+        <option value="🏃 운동">🏃 운동</option>
+        <option value="🛒 쇼핑">🛒 쇼핑</option>
+        <option value="💼 업무">💼 업무</option>
+      </select>
+    </div>
+    <ul id="note-list" style="list-style: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto;"></ul>
+  `;
+
+  // 엔터 키로 메모 추가
+  document.getElementById('note-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      addNote();
+    }
+  });
+
+  // 초기 렌더링
+  renderNotes();
+}
+
+// 페이지 로드 시 Notes 패널 초기화
+document.addEventListener('DOMContentLoaded', initializeNotesPanel);
+
+// 투두리스트 저장 함수
+function saveTodoList() {
+  const todoList = document.getElementById("todo-list");
+  const todos = Array.from(todoList.children).map(li => ({
+    text: li.querySelector(".todo-left span").textContent,
+    date: li.dataset.date,
+    category: li.dataset.category,
+    completed: li.classList.contains("completed"),
+    pinned: li.dataset.pinned === "true"
+  }));
+  localStorage.setItem("todoList", JSON.stringify(todos));
+  
+  // 달력 뷰가 표시 중이면 달력 업데이트
+  if (document.getElementById("calendar-view").style.display === "block") {
+    if (calendarMode === "month") {
+      showMonthView();
+    } else if (calendarMode === "week") {
+      showWeekView();
+    } else if (calendarMode === "today") {
+      showTodayView();
+    }
+  }
+}
+
+// 투두리스트 불러오기 함수
+function loadTodoList() {
+  const savedTodos = localStorage.getItem("todoList");
+  if (!savedTodos) return;
+
+  const todos = JSON.parse(savedTodos);
+  const list = document.getElementById("todo-list");
+  list.innerHTML = ""; // 기존 리스트 초기화
+
+  todos.forEach(todo => {
+    const input = document.getElementById("todo-input");
+    const dateInput = document.getElementById("todo-date");
+    const categorySelect = document.getElementById("todo-category");
+
+    input.value = todo.text;
+    dateInput.value = todo.date;
+    categorySelect.value = todo.category;
+
+    addTodo(); // 기존 addTodo 함수 재사용
+
+    // 완료 상태와 핀 상태 복원
+    const lastItem = list.lastElementChild;
+    if (todo.completed) {
+      lastItem.classList.add("completed");
+      lastItem.querySelector("input[type='checkbox']").checked = true;
+    }
+    if (todo.pinned) {
+      lastItem.dataset.pinned = "true";
+      const pinBtn = lastItem.querySelector(".pin-btn");
+      setPinButtonStyle(pinBtn, true);
+    }
+  });
+
+  renderList(); // 정렬 적용
+}
+
+// 마지막 뷰 복원 함수
+function restoreLastView() {
+  const lastView = localStorage.getItem("currentView") || "todo";
+  
+  // 모든 뷰 숨기기
+  document.querySelector(".main").style.display = "none";
+  document.getElementById("calendar-view").style.display = "none";
+  document.getElementById("category-view").style.display = "none";
+  document.getElementById("friends-view").style.display = "none";
+
+  // 마지막 뷰 표시
+  switch(lastView) {
+    case "todo":
+      document.querySelector(".main").style.display = "block";
+      document.querySelectorAll("#todo-list li").forEach(li => {
+        li.style.display = "flex";
+      });
+      break;
+    case "calendar":
+      document.getElementById("calendar-view").style.display = "block";
+      showMonthView(); // 캘린더 뷰 초기화
+      break;
+    case "category":
+      document.getElementById("category-view").style.display = "block";
+      const selectedCategory = document.getElementById("category-edit-select").value;
+      if (selectedCategory) {
+        handleCategoryChange();
+      }
+      break;
+  }
+}
+
+// 페이지 로드 시 마지막 뷰 복원 추가
+document.addEventListener("DOMContentLoaded", () => {
+  loadTodoList();
+  initializeNotesPanel();
+  restoreLastView(); // 마지막 뷰 복원
 });
