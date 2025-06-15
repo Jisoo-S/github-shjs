@@ -95,8 +95,14 @@ function addTodo() {
   deleteBtn.style.background = "none";
   deleteBtn.style.cursor = "pointer";
   deleteBtn.addEventListener("click", () => {
+    const date = li.dataset.date;
     li.remove();
     saveTodoList();
+    
+    // 달력 뷰가 표시 중이면 즉시 업데이트
+    if (document.getElementById("calendar-view").style.display === "block") {
+      updateCalendarCell(new Date(date));
+    }
   });
 
   const buttonGroup = document.createElement("div");
@@ -122,13 +128,7 @@ function addTodo() {
 
   // 달력 뷰가 표시 중이면 즉시 업데이트
   if (document.getElementById("calendar-view").style.display === "block") {
-    if (typeof calendarMode !== 'undefined' && calendarMode === "month") {
-      showMonthView();
-    } else if (typeof calendarMode !== 'undefined' && calendarMode === "week") {
-      showWeekView();
-    } else if (typeof calendarMode !== 'undefined' && calendarMode === "today") {
-      showTodayView();
-    }
+    updateCalendarCell(new Date(dateValue));
   }
 }
 
@@ -260,19 +260,17 @@ function editTodo(li, left, span, checkbox, oldDate, buttonGroup) {
     }
 
     handleCategoryChange();
-  });
-  saveTodoList();
 
-  // 달력 뷰가 표시 중이면 즉시 업데이트
-  if (document.getElementById("calendar-view").style.display === "block") {
-    if (typeof calendarMode !== 'undefined' && calendarMode === "month") {
-      showMonthView();
-    } else if (typeof calendarMode !== 'undefined' && calendarMode === "week") {
-      showWeekView();
-    } else if (typeof calendarMode !== 'undefined' && calendarMode === "today") {
-      showTodayView();
+    saveTodoList();
+
+    // 달력 뷰가 표시 중이면 즉시 업데이트
+    if (document.getElementById("calendar-view").style.display === "block") {
+      updateCalendarCell(new Date(oldDate));
+      if (oldDate !== selectedDate) {
+        updateCalendarCell(new Date(selectedDate));
+      }
     }
-  }
+  });
 }
 
 function saveTodoList() {
