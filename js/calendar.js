@@ -4,7 +4,7 @@ let calendarMode = "month";
 // 캘린더 뷰 초기화 함수
 function initializeCalendar() {
   showMonthView();
-}
+} 
 
 function showMonthView() {
   calendarMode = "month";

@@ -2,7 +2,7 @@ function handleCategoryChange() {
   const selectedCategory = document.getElementById("category-edit-select").value.trim();
   const resultArea = document.getElementById("category-todo-result");
   const allTodos = document.querySelectorAll("#todo-list li");
-
+ 
   resultArea.innerHTML = "";
 
   const sortedTodos = Array.from(allTodos).sort((a, b) => {
