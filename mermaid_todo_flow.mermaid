@@ -1,0 +1,104 @@
+flowchart TD
+    A[🏠 메인 대시보드] --> B[📝 Todo View]
+    A --> C[📅 Calendar View]
+    A --> D[👥 Friends View]
+    A --> E[🏷️ Category View]
+    
+    %% Todo View 상세
+    B --> B1[할 일 입력/수정/삭제 ✅]
+    B --> B2[날짜 설정 ✅]
+    B --> B3[카테고리 분류 ✅]
+    B --> B4[핀 고정 기능 ✅]
+    B --> B5[우선순위 설정 🔄]
+    B --> B6[완료/미완료 상태 관리]
+    B --> B7[검색 및 필터링]
+    
+    %% Calendar View 상세
+    C --> C1[구글 달력 API 연동 ✅]
+    C --> C2[월간/주간/일간 뷰 ✅]
+    C --> C3[투두 항목 달력 표시 🔄]
+    C --> C4[드래그 앤 드롭 일정 변경 🔄]
+    C --> C5[일정 클릭시 상세 정보]
+    C --> C6[달력에서 투두 생성]
+    
+    %% Friends View 상세
+    D --> D1[친구 목록 조회 🔄]
+    D --> D2[친구 추가/삭제 🔄]
+    D --> D3[친구 투두 공유 🔄]
+    D --> D4[공동 프로젝트 관리 🔄]
+    D --> D5[친구 활동 피드 🔄]
+    D --> D6[그룹 만들기 🔄]
+    
+    %% Category View 상세
+    E --> E1[카테고리 생성/삭제 🔄]
+    E --> E2[+ 버튼으로 빠른 추가 🔄]
+    E --> E3[카테고리별 색상 지정 🔄]
+    E --> E4[카테고리별 투두 목록 🔄]
+    E --> E5[카테고리별 통계 🔄]
+    E --> E6[카테고리 순서 변경 🔄]
+    
+    %% 사용자 플로우
+    START([사용자 접속]) --> AUTH_CHECK{로그인 상태 확인}
+    AUTH_CHECK -->|로그인됨| A
+    AUTH_CHECK -->|비로그인| AUTH_PAGE[인증 페이지]
+    AUTH_PAGE --> LOGIN[로그인]
+    AUTH_PAGE --> SIGNUP[회원가입]
+    LOGIN --> LOGIN_FORM[아이디/비밀번호 입력]
+    SIGNUP --> SIGNUP_FORM[회원정보 입력]
+    LOGIN_FORM -->|성공| A
+    LOGIN_FORM -->|실패| LOGIN
+    SIGNUP_FORM -->|성공| A
+    SIGNUP_FORM -->|실패| SIGNUP
+    
+    %% 투두 생성 플로우
+    B --> CREATE_TODO[새 투두 생성]
+    CREATE_TODO --> TODO_FORM[투두 입력 폼]
+    TODO_FORM --> TODO_CATEGORY[카테고리 선택]
+    TODO_FORM --> TODO_DATE[날짜 설정]
+    TODO_FORM --> TODO_PRIORITY[우선순위 설정]
+    TODO_CATEGORY --> SAVE_TODO[투두 저장]
+    TODO_DATE --> SAVE_TODO
+    TODO_PRIORITY --> SAVE_TODO
+    SAVE_TODO --> SYNC_CALENDAR[달력 동기화]
+    SYNC_CALENDAR --> A
+    
+    %% 카테고리 관리 플로우
+    E --> ADD_CATEGORY[새 카테고리 추가]
+    ADD_CATEGORY --> CATEGORY_FORM[카테고리 정보 입력]
+    CATEGORY_FORM --> CATEGORY_COLOR[색상 선택]
+    CATEGORY_FORM --> CATEGORY_NAME[이름 입력]
+    CATEGORY_COLOR --> SAVE_CATEGORY[카테고리 저장]
+    CATEGORY_NAME --> SAVE_CATEGORY
+    SAVE_CATEGORY --> UPDATE_VIEW[뷰 업데이트]
+    UPDATE_VIEW --> A
+    
+    %% 달력 연동 플로우
+    C3 --> CALENDAR_SYNC[달력-투두 동기화]
+    CALENDAR_SYNC --> GOOGLE_API[Google Calendar API]
+    GOOGLE_API --> CREATE_EVENT[달력 이벤트 생성]
+    CREATE_EVENT --> UPDATE_TODO[투두 상태 업데이트]
+    UPDATE_TODO --> A
+    
+    %% 친구 기능 플로우
+    D --> ADD_FRIEND[친구 추가]
+    ADD_FRIEND --> SEARCH_USER[사용자 검색]
+    SEARCH_USER --> SEND_REQUEST[친구 요청 전송]
+    SEND_REQUEST --> FRIEND_ACCEPT[요청 수락]
+    FRIEND_ACCEPT --> SHARE_TODO[투두 공유]
+    SHARE_TODO --> A
+    
+
+    
+    %% 스타일링
+    classDef completed fill:#d5f4e6,stroke:#2ecc71,stroke-width:2px
+    classDef inProgress fill:#fef9e7,stroke:#f39c12,stroke-width:2px
+    classDef planned fill:#f4ecf7,stroke:#9b59b6,stroke-width:2px
+    
+    %% 완료된 기능들
+    class B1,B2,B3,B4,C1,C2 completed
+    
+    %% 진행 중인 기능들
+    class B5,C3,C4,D1,D2,D3,D4,D5,D6,E1,E2,E3,E4,E5,E6 inProgress
+    
+    %% 계획된 기능들
+    class B6,B7,C5,C6,TODO_PRIORITY,CATEGORY_COLOR planned

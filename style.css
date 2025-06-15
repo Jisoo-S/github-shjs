@@ -572,7 +572,7 @@ li.completed span {
     display: none !important;
   }
   .sidebar {
-    /* display: flex !important; */ /* JavaScript에서 제어하도록 제거 */
+    display: flex; /* JavaScript에서 제어하도록 !important 제거 */
     position: fixed;
     left: 0;
     top: 0;
