@@ -133,24 +133,34 @@
     <h2 style="font-size: 28px;">Friends</h2>
     
     <!-- 로그인 폼 -->
-    <div id="login-form">
+    <div id="login-form" style="display: block; max-width: 400px; margin: 0 auto; text-align: center;">
       <div class="profile-circle">
         <img id="profile-image" src="https://via.placeholder.com/100" alt="Profile" 
           style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 20px;">
       </div>
-      <input type="email" id="login-email" placeholder="Email" 
+      <h3 style="margin-bottom: 20px;">로그인 또는 회원가입</h3>
+      <input type="email" id="login-email" placeholder="이메일 주소" 
         style="width: 100%; max-width: 300px; padding: 10px; margin: 5px 0; border-radius: 20px; border: 1px solid #ddd;" />
-      <input type="password" id="login-password" placeholder="Password" 
+      <input type="password" id="login-password" placeholder="비밀번호 (6자 이상)" 
         style="width: 100%; max-width: 300px; padding: 10px; margin: 5px 0; border-radius: 20px; border: 1px solid #ddd;" />
-      <div style="margin-top: 10px;">
-        <button onclick="login()" style="padding: 8px 20px; border-radius: 20px; border: none; background: #ffcc70; margin: 5px;">Login</button>
-        <button onclick="signup()" style="padding: 8px 20px; border-radius: 20px; border: none; background: #e0e0e0; margin: 5px;">Sign Up</button>
-        <button onclick="logout()" style="padding: 8px 20px; border-radius: 20px; border: none; background: #ff9f9f; margin: 5px;">Logout</button>
+      <div style="margin-top: 20px;">
+        <button onclick="login()" style="padding: 8px 20px; border-radius: 20px; border: none; background: #ffcc70; margin: 5px; color: white; cursor: pointer;">로그인</button>
+        <button onclick="signup()" style="padding: 8px 20px; border-radius: 20px; border: none; background: #e0e0e0; margin: 5px; cursor: pointer;">회원가입</button>
       </div>
+      <p style="margin-top: 20px; color: #666; font-size: 14px;">
+        * 회원가입은 이메일과 비밀번호만 입력하시면 됩니다.<br>
+        * 비밀번호는 6자 이상이어야 합니다.
+      </p>
     </div>
 
     <!-- 사용자 정보 및 친구 목록 -->
-    <div id="user-info" style="margin-top: 20px;">
+    <div id="user-info" style="margin-top: 20px; display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 id="user-email" style="margin: 0;"></h3>
+        <button onclick="logout()" style="padding: 8px 20px; border-radius: 20px; border: none; background: #ff9f9f; color: white; cursor: pointer;">
+          로그아웃
+        </button>
+      </div>
       <div id="friends-list" style="margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px;">
         <!-- 친구 프로필은 JavaScript에서 동적으로 추가됨 -->
       </div>
@@ -222,9 +232,19 @@
     });
   </script>  
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+    import { login, signup, logout } from "./js/firebase.js";
+
+    // 전역 함수로 등록
+    window.login = login;
+    window.signup = signup;
+    window.logout = logout;
+  </script>
 
   <!-- 유틸리티 함수 -->
   <script src="js/utils.js"></script>
@@ -233,7 +253,7 @@
   <script src="js/modal.js"></script>
   
   <!-- Firebase 관련 기능 -->
-  <script src="js/firebase.js"></script>
+  <script type="module" src="js/firebase.js"></script>
   
   <!-- 할 일 목록 관련 기능 -->
   <script src="js/todo.js"></script>
