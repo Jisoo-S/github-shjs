@@ -3,6 +3,12 @@ function initializeFriendsList() {
   const addFriendBtn = document.getElementById("add-friend-btn");
   const friendInput = document.getElementById("friend-input");
 
+  // 요소가 존재하는지 확인
+  if (!friendsList || !addFriendBtn || !friendInput) {
+    console.log("친구 목록 관련 요소를 찾을 수 없습니다.");
+    return;
+  }
+
   // 친구 추가 버튼 클릭 이벤트
   addFriendBtn.addEventListener("click", () => {
     const friendName = friendInput.value.trim();
@@ -39,6 +45,8 @@ function initializeFriendsList() {
 
 function saveFriendsList() {
   const friendsList = document.getElementById("friends-list");
+  if (!friendsList) return;
+
   const friends = Array.from(friendsList.children).map(li => ({
     name: li.querySelector("span").textContent
   }));
@@ -47,6 +55,8 @@ function saveFriendsList() {
 
 function loadFriendsList() {
   const friendsList = document.getElementById("friends-list");
+  if (!friendsList) return;
+
   const savedFriends = JSON.parse(localStorage.getItem("friends") || "[]");
 
   friendsList.innerHTML = "";

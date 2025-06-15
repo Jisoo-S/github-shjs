@@ -17,7 +17,7 @@
   </div> 
   
 
-  <div class="main">
+  <div class="main" style="display: none;">
     <div class="header-card">
       <h1>To do list</h1>
       <div class="subtitle">Subtitle</div>
@@ -39,7 +39,7 @@
         <option value="💼 Work">💼 Work</option>
       </select>
 
-      <button onclick="addTodo()">Add</button>
+      <button id="add-todo-btn">Add</button>
     </div>
 
     <ul id="todo-list"></ul>
@@ -129,7 +129,7 @@
   
   </div>
 
-  <div id="friends-view" style="display: none; padding: 20px; margin-left: 100px;">
+  <div id="friends-view" style="display: block; padding: 20px; margin-left: 100px;">
     <h2 style="font-size: 28px;">Friends</h2>
     
     <!-- 로그인 폼 -->
@@ -144,8 +144,8 @@
       <input type="password" id="login-password" placeholder="비밀번호 (6자 이상)" 
         style="width: 100%; max-width: 300px; padding: 10px; margin: 5px 0; border-radius: 20px; border: 1px solid #ddd;" />
       <div style="margin-top: 20px;">
-        <button onclick="login()" style="padding: 8px 20px; border-radius: 20px; border: none; background: #ffcc70; margin: 5px; color: white; cursor: pointer;">로그인</button>
-        <button onclick="signup()" style="padding: 8px 20px; border-radius: 20px; border: none; background: #e0e0e0; margin: 5px; cursor: pointer;">회원가입</button>
+        <button id="login-btn" style="padding: 8px 20px; border-radius: 20px; border: none; background: #ffcc70; margin: 5px; color: white; cursor: pointer;">로그인</button>
+        <button id="signup-btn" style="padding: 8px 20px; border-radius: 20px; border: none; background: #e0e0e0; margin: 5px; cursor: pointer;">회원가입</button>
       </div>
       <p style="margin-top: 20px; color: #666; font-size: 14px;">
         * 회원가입은 이메일과 비밀번호만 입력하시면 됩니다.<br>
@@ -201,6 +201,19 @@
     const friendsIcon = document.getElementById("friends-icon");
   
     function showView(view) {
+      // 로그인 상태 확인
+      const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+      
+      // 로그인하지 않은 경우 friends-view만 표시
+      if (!isLoggedIn) {
+        todoMain.style.display = "none";
+        calendarView.style.display = "none";
+        categoryView.style.display = "none";
+        friendsView.style.display = "block";
+        return;
+      }
+
+      // 로그인한 경우 선택된 뷰 표시
       todoMain.style.display = view === 'todo' ? "block" : "none";
       calendarView.style.display = view === 'calendar' ? "block" : "none";
       categoryView.style.display = view === 'category' ? "block" : "none";
@@ -226,9 +239,13 @@
 
     // 페이지 로드 시 마지막 뷰 복원
     document.addEventListener('DOMContentLoaded', () => {
-      const lastView = localStorage.getItem('lastView') || 'todo';
-      showView(lastView);
-      initializeNotesPanel(); // Notes 패널 초기화 함수 호출
+      const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+      if (isLoggedIn) {
+        const lastView = localStorage.getItem('lastView') || 'todo';
+        showView(lastView);
+      } else {
+        showView('friends');
+      }
     });
   </script>  
 
@@ -238,37 +255,121 @@
     import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-    import { login, signup, logout } from "./js/firebase.js";
+    import { login, signup, logout } from './js/firebase.js';
+    import { addTodo } from './js/todo.js';
+    
+    // Firebase 설정
+    const firebaseConfig = {
+      apiKey: "AIzaSyADIDRqmGCI6PGofskRtVnrsTK2xHpoqEw",
+      authDomain: "logintodo-ff777.firebaseapp.com",
+      projectId: "logintodo-ff777",
+      storageBucket: "logintodo-ff777.appspot.com",
+      messagingSenderId: "1067689858137",
+      appId: "1:1067689858137:web:c2de1fdbe937bfb2104d48",
+      measurementId: "G-0SYF713XKM"
+    };
 
-    // 전역 함수로 등록
-    window.login = login;
-    window.signup = signup;
-    window.logout = logout;
+    // Firebase 초기화
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // 이벤트 리스너 등록
+    document.addEventListener('DOMContentLoaded', () => {
+      // 로그인/회원가입 버튼
+      const loginBtn = document.getElementById('login-btn');
+      const signupBtn = document.getElementById('signup-btn');
+      const loginEmailInput = document.getElementById('login-email');
+      const loginPasswordInput = document.getElementById('login-password');
+      
+      if (loginBtn) {
+        loginBtn.onclick = async () => {
+          try {
+            await login();
+          } catch (error) {
+            console.error("로그인 처리 중 오류:", error);
+          }
+        };
+      }
+      
+      if (signupBtn) {
+        signupBtn.onclick = async () => {
+          try {
+            await signup();
+          } catch (error) {
+            console.error("회원가입 처리 중 오류:", error);
+          }
+        };
+      }
+
+      // 비밀번호 입력 필드에서 엔터 키 이벤트
+      if (loginPasswordInput) {
+        loginPasswordInput.addEventListener('keyup', async (event) => {
+          if (event.key === 'Enter') {
+            try {
+              await login();
+            } catch (error) {
+              console.error("로그인 처리 중 오류:", error);
+            }
+          }
+        });
+      }
+
+      // 할 일 추가 버튼
+      const addTodoBtn = document.getElementById('add-todo-btn');
+      if (addTodoBtn) {
+        addTodoBtn.onclick = async () => {
+          try {
+            await addTodo();
+          } catch (error) {
+            console.error("할 일 추가 중 오류:", error);
+          }
+        };
+      }
+
+      // 엔터 키로 할 일 추가
+      const todoInput = document.getElementById('todo-input');
+      if (todoInput) {
+        todoInput.addEventListener('keyup', async (event) => {
+          if (event.key === 'Enter') {
+            try {
+              await addTodo();
+            } catch (error) {
+              console.error("할 일 추가 중 오류:", error);
+            }
+          }
+        });
+      }
+
+      // 로그아웃 버튼
+      const logoutBtn = document.querySelector('button[onclick="logout()"]');
+      if (logoutBtn) {
+        logoutBtn.onclick = async () => {
+          try {
+            await logout();
+          } catch (error) {
+            console.error("로그아웃 처리 중 오류:", error);
+          }
+        };
+      }
+    });
   </script>
-
-  <!-- 유틸리티 함수 -->
-  <script src="js/utils.js"></script>
-  
-  <!-- 모달 관련 기능 -->
-  <script src="js/modal.js"></script>
-  
-  <!-- Firebase 관련 기능 -->
-  <script type="module" src="js/firebase.js"></script>
   
   <!-- 할 일 목록 관련 기능 -->
-  <script src="js/todo.js"></script>
+  <script type="module" src="js/todo.js"></script>
   
   <!-- 캘린더 관련 기능 -->
-  <script src="js/calendar.js"></script>
+  <script type="module" src="js/calendar.js"></script>
   
   <!-- 노트 관련 기능 -->
-  <script src="js/notes.js"></script>
+  <script type="module" src="js/notes.js"></script>
   
   <!-- 카테고리 관련 기능 -->
-  <script src="js/category.js"></script>
+  <script type="module" src="js/category.js"></script>
   
   <!-- 친구 관련 기능 -->
-  <script src="js/friends.js"></script>
+  <script type="module" src="js/friends.js"></script>
 
 </body>
 </html> 

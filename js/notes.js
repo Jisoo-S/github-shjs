@@ -1,46 +1,128 @@
-function saveNotes(notes) {
-  localStorage.setItem('calendar_notes', JSON.stringify(notes));
-  console.log('Notes saved to localStorage:', notes);
+// Firebase 관련 함수 임포트
+import { getCurrentUser, addNoteToFirebase, getNotesFromFirebase, deleteNoteFromFirebase } from './firebase.js';
+
+let notes = []; // 메모 목록을 저장할 배열
+
+// UI를 업데이트하는 함수
+function updateNotesUI() {
+  renderNotes();
 }
 
+// 기존 saveNotes 함수를 Firebase와 연동하도록 수정
+async function saveNotes() {
+  // 이 함수는 개별 노트 저장에 사용되지 않고, addNote, deleteNote 등에서 직접 Firebase 연동을 수행합니다.
+  // 따라서 여기서는 빈 함수로 두거나, 필요에 따라 전체 노트를 한 번에 저장하는 로직을 추가할 수 있습니다.
+  // 현재 구현에서는 개별 노트 작업 시 바로 Firebase와 통신하므로 이 함수는 필요 없을 수 있습니다.
+  console.log("saveNotes 호출됨 (Firebase 연동)");
+  // if (getCurrentUser()) {
+  //   // 모든 노트를 한 번에 저장하는 로직이 필요하다면 여기에 구현
+  //   // 예: await setDoc(doc(db, "users", user.uid, "generalNotes", "list"), { notes });
+  // }
+}
+
+// 기존 getNotes 함수를 Firebase와 연동하도록 수정 (loadNotes로 대체)
+// 이 함수는 더 이상 사용되지 않을 것입니다. 대신 loadNotes가 사용됩니다.
 function getNotes() {
-  const savedNotes = localStorage.getItem('calendar_notes');
-  const parsedNotes = JSON.parse(savedNotes || '[]');
-  console.log('Notes loaded from localStorage:', parsedNotes);
-  return parsedNotes;
+  console.log("getNotes 호출됨 (더 이상 사용되지 않음, loadNotes 사용)");
+  return notes; // 현재 로컬 상태 반환
 }
 
-function addNote() {
+async function addNote() {
   const noteInput = document.getElementById('note-input');
+  if (!noteInput) {
+    console.error('note-input element not found');
+    return;
+  }
+
   const text = noteInput.value.trim();
-  
   console.log('addNote called. Input text:', text);
 
   if (!text) {
     console.log('No text entered, returning.');
-    return; // 입력값이 없으면 추가하지 않음
+    return;
   }
 
-  const notes = getNotes();
+  const user = getCurrentUser();
+  if (!user) {
+    alert("로그인해야 메모를 추가할 수 있습니다.");
+    return;
+  }
+
   const newNote = {
-    id: Date.now(), // 고유 ID 생성
     text: text,
-    date: new Date().toISOString() // 날짜 정보는 유지
+    date: new Date().toISOString()
   };
 
-  notes.push(newNote);
-  console.log('New note added to array:', newNote);
-  saveNotes(notes);
-  renderNotes(); // 메모 추가 후 목록 다시 렌더링
-  noteInput.value = ''; // 입력 필드 초기화
-  console.log('addNote completed. List should be updated.');
+  try {
+    // Firebase에 저장
+    const docRef = await addNoteToFirebase(newNote);
+    console.log("메모 추가 성공:", docRef.id);
+    
+    // 로컬 상태 업데이트
+    notes.push({ id: docRef.id, ...newNote });
+    
+    // UI 업데이트
+    updateNotesUI();
+    
+    // 입력 필드 초기화
+    noteInput.value = '';
+  } catch (error) {
+    console.error("메모 추가 실패:", error);
+    alert("메모 추가에 실패했습니다: " + error.message);
+  }
 }
 
-function deleteNote(id) {
-  const notes = getNotes();
-  const filteredNotes = notes.filter(n => n.id !== id);
-  saveNotes(filteredNotes);
-  renderNotes(); // 삭제 후 목록 다시 렌더링
+async function deleteNote(id) {
+  const user = getCurrentUser();
+  if (!user) {
+    alert("로그인해야 메모를 삭제할 수 있습니다.");
+    return;
+  }
+
+  if (!confirm('이 메모를 삭제하시겠습니까?')) {
+    return;
+  }
+
+  try {
+    // Firebase에서 삭제
+    await deleteNoteFromFirebase(id);
+    console.log("메모 삭제 성공:", id);
+    
+    // 로컬 상태 업데이트
+    notes = notes.filter(n => n.id !== id);
+    
+    // UI 업데이트
+    updateNotesUI();
+  } catch (error) {
+    console.error("메모 삭제 실패:", error);
+    alert("메모 삭제에 실패했습니다: " + error.message);
+  }
+}
+
+export async function loadNotes() {
+  try {
+    const user = getCurrentUser();
+    if (!user) {
+      console.log("사용자가 로그인되어 있지 않습니다.");
+      return;
+    }
+
+    const loadedNotes = await getNotesFromFirebase();
+    notes = loadedNotes.sort((a, b) => new Date(b.date) - new Date(a.date));
+    updateNotesUI();
+  } catch (error) {
+    console.error("메모 목록 로드 실패:", error);
+  }
+}
+
+export function clearNotesUI() {
+  const noteList = document.getElementById('note-list');
+  if (noteList) {
+    noteList.innerHTML = '';
+  }
+  notes = [];
+  console.log("노트 UI 초기화");
+  renderNotes();
 }
 
 function renderNotes() {
@@ -49,26 +131,18 @@ function renderNotes() {
     console.error('Error: #note-list element not found in renderNotes.');
     return;
   }
-  console.log('Rendering notes...');
 
-  const notes = getNotes();
+  noteList.innerHTML = '';
   
-  // 정렬: 최신 메모가 먼저 오도록 날짜 역순 정렬
-  const sortedNotes = notes.sort((a, b) => new Date(b.date) - new Date(a.date));
-  console.log('Sorted notes:', sortedNotes);
-
-  noteList.innerHTML = ''; // 기존 목록을 비우고 새로 그림
-  console.log('noteList cleared. Number of notes to render:', sortedNotes.length);
-  
-  if (sortedNotes.length === 0) {
-    console.log('No notes to display.');
+  if (notes.length === 0) {
     const noNotesMessage = document.createElement('li');
     noNotesMessage.textContent = '메모가 없습니다.';
     noNotesMessage.style.cssText = 'text-align: center; color: #888; padding: 20px;';
     noteList.appendChild(noNotesMessage);
+    return;
   }
 
-  sortedNotes.forEach(note => {
+  notes.forEach(note => {
     const li = document.createElement('li');
     li.style.cssText = ` 
       display: flex; 
@@ -81,7 +155,6 @@ function renderNotes() {
       transition: transform 0.2s;
     `;
 
-    // 메모 내용
     const content = document.createElement('div');
     content.style.cssText = `
       flex-grow: 1;
@@ -91,12 +164,11 @@ function renderNotes() {
     const text = document.createElement('div');
     text.style.cssText = `
       margin-bottom: 4px;
-      white-space: pre-wrap; /* 줄바꿈 유지 */
+      white-space: pre-wrap;
     `;
     text.textContent = note.text;
     content.appendChild(text);
 
-    // 날짜 정보만 유지 (카테고리 제거)
     const meta = document.createElement('div');
     meta.style.cssText = `
       font-size: 12px;
@@ -112,7 +184,6 @@ function renderNotes() {
     content.appendChild(meta);
     li.appendChild(content);
 
-    // 삭제 버튼
     const deleteBtn = document.createElement('button');
     deleteBtn.textContent = '🗑️';
     deleteBtn.style.cssText = `
@@ -122,6 +193,7 @@ function renderNotes() {
       font-size: 16px;
       opacity: 0.5;
       transition: opacity 0.2s;
+      padding: 4px 8px;
     `;
     deleteBtn.addEventListener('mouseover', () => deleteBtn.style.opacity = '1');
     deleteBtn.addEventListener('mouseout', () => deleteBtn.style.opacity = '0.5');
@@ -129,50 +201,29 @@ function renderNotes() {
     li.appendChild(deleteBtn);
 
     noteList.appendChild(li);
-    console.log('Appended note:', note.text);
   });
-  console.log('Finished rendering notes.');
 }
 
-// Notes 패널 초기화 (HTML이 직접 정의하는 경우 이 함수는 UI 구성보다는 이벤트 리스너 연결 및 초기 렌더링에 집중)
-function initializeNotesPanel() {
-  // HTML에서 직접 정의된 요소에 이벤트 리스너만 연결
+// 이벤트 리스너 설정
+document.addEventListener('DOMContentLoaded', () => {
   const addNoteButton = document.querySelector('#note-panel button[onclick="addNote()"]');
   if (addNoteButton) {
-    addNoteButton.onclick = addNote; // 기존 onclick 속성 제거하고 이벤트 리스너로 연결
+    addNoteButton.onclick = addNote;
   }
 
-  // 엔터 키로 메모 추가 (Ctrl+Enter 줄바꿈)
   const noteInput = document.getElementById('note-input');
   if (noteInput) {
-    noteInput.addEventListener('keydown', (e) => { // keydown 이벤트로 변경
-      console.log('Key pressed: ', e.key, ' | CtrlKey: ', e.ctrlKey, ' | ShiftKey: ', e.shiftKey, ' | AltKey: ', e.altKey);
-      if (e.key === 'Enter') {
-        console.log('Enter key detected.');
-        if (e.ctrlKey) {
-          console.log('Ctrl + Enter detected. Manually inserting newline.');
-          e.preventDefault(); // 기본 동작 방지 (수동 줄바꿈 삽입을 위해)
-
-          // 현재 커서 위치에 줄바꿈 문자 삽입
-          const start = noteInput.selectionStart;
-          const end = noteInput.selectionEnd;
-          noteInput.value = noteInput.value.substring(0, start) + "\n" + noteInput.value.substring(end);
-          
-          // 커서 위치 업데이트
-          noteInput.selectionStart = noteInput.selectionEnd = start + 1;
-          console.log('After Ctrl+Enter, textarea value:', JSON.stringify(noteInput.value)); // 새 로그
-
-        } else {
-          console.log('Plain Enter detected. Preventing default and adding note.');
-          // Enter만: 메모 추가
-          e.preventDefault(); // 기본 Enter 동작 (폼 제출/줄바꿈) 방지
-          addNote();
-        }
+    noteInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.ctrlKey) {
+        e.preventDefault();
+        addNote();
       }
     });
   }
+});
 
-  // 초기 렌더링
-  renderNotes();
-  console.log('Notes Panel initialized.');
-} 
+// 전역으로 함수 노출
+window.addNote = addNote;
+window.deleteNote = deleteNote;
+window.loadNotes = loadNotes;
+window.clearNotesUI = clearNotesUI; 
