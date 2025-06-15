@@ -30,7 +30,7 @@ function getToday() {
     checkbox.type = "checkbox";
     checkbox.addEventListener("change", () => {
       li.classList.toggle("completed");
-      saveTodoList(); // 체크박스 변경 시 저장
+      saveTodoList();
     });
     
 
@@ -129,6 +129,17 @@ function getToday() {
 
     renderList();  
     saveTodoList(); // 추가 시 저장
+
+    // 달력 뷰가 표시 중이면 즉시 업데이트
+    if (document.getElementById("calendar-view").style.display === "block") {
+      if (calendarMode === "month") {
+        showMonthView();
+      } else if (calendarMode === "week") {
+        showWeekView();
+      } else if (calendarMode === "today") {
+        showTodayView();
+      }
+    }
   }
 
   function renderList() {
@@ -255,6 +266,18 @@ function getToday() {
       });
 
       renderList();
+      saveTodoList(); // 저장 함수 호출
+
+      // 달력 뷰가 표시 중이면 즉시 업데이트
+      if (document.getElementById("calendar-view").style.display === "block") {
+        if (calendarMode === "month") {
+          showMonthView();
+        } else if (calendarMode === "week") {
+          showWeekView();
+        } else if (calendarMode === "today") {
+          showTodayView();
+        }
+      }
 
       const isCategoryViewVisible = document.getElementById("category-view").style.display === "block";
       if (isCategoryViewVisible) {
@@ -1280,8 +1303,7 @@ function updateCalendarCell(date) {
             border-radius: 50%;
             position: absolute;
             bottom: 4px;
-            left: 50%;
-            transform: translateX(-50%);
+            right: 4px;
           `;
           cell.appendChild(indicator);
         }
@@ -1301,13 +1323,108 @@ function createCalendarCell(date) {
   cell.style.position = "relative";
   cell.style.cursor = "pointer";
   cell.style.userSelect = "none";
+  cell.style.minHeight = "40px";
   
-  const formattedDate = date.toISOString().split('T')[0];
+  // 날짜 형식 수정 (시간대 문제 해결)
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const formattedDate = `${year}-${month}-${day}`;
   cell.dataset.date = formattedDate;
   
-  cell.textContent = date.getDate();
+  // 날짜 표시
+  const dateDiv = document.createElement("div");
+  dateDiv.textContent = date.getDate();
+  dateDiv.style.marginBottom = "4px";
+  cell.appendChild(dateDiv);
   
-  // 메모 표시기 추가
+  // 해당 날짜의 할 일 표시
+  const todos = JSON.parse(localStorage.getItem("todoList") || "[]");
+  const dayTodos = todos.filter(todo => todo.date === formattedDate);
+  
+  if (dayTodos.length > 0) {
+    // 할 일이 있을 때 빨간 점 표시 (위쪽으로 이동)
+    const dot = document.createElement("div");
+    dot.style.cssText = `
+      width: 8px;
+      height: 8px;
+      background-color: #ff4d4d;
+      border-radius: 50%;
+      position: absolute;
+      top: 4px;
+      right: 4px;
+    `;
+    cell.appendChild(dot);
+
+    // 툴팁 생성
+    const tooltip = document.createElement("div");
+    tooltip.style.cssText = `
+      position: fixed;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 8px;
+      min-width: 200px;
+      max-width: 300px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      z-index: 1000;
+      display: none;
+    `;
+
+    // 툴팁 내용 생성
+    const tooltipContent = document.createElement("div");
+    tooltipContent.style.cssText = `
+      font-size: 12px;
+      color: #333;
+    `;
+
+    dayTodos.forEach(todo => {
+      const todoItem = document.createElement("div");
+      todoItem.style.cssText = `
+        padding: 4px 8px;
+        margin: 4px 0;
+        background: ${todo.completed ? '#e0e0e0' : '#fff3cd'};
+        border-radius: 4px;
+        ${todo.completed ? 'text-decoration: line-through;' : ''}
+      `;
+      todoItem.textContent = todo.text;
+      tooltipContent.appendChild(todoItem);
+    });
+
+    tooltip.appendChild(tooltipContent);
+    document.body.appendChild(tooltip); // body에 직접 추가
+
+    // 마우스 이벤트 처리
+    cell.addEventListener("mouseenter", (e) => {
+      const rect = cell.getBoundingClientRect();
+      const tooltipRect = tooltip.getBoundingClientRect();
+      
+      // 툴팁 위치 계산
+      let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+      let top = rect.top - tooltipRect.height - 10;
+      
+      // 화면 경계 체크
+      if (left < 10) left = 10;
+      if (left + tooltipRect.width > window.innerWidth - 10) {
+        left = window.innerWidth - tooltipRect.width - 10;
+      }
+      
+      // 위쪽에 공간이 없으면 아래쪽에 표시
+      if (top < 10) {
+        top = rect.bottom + 10;
+      }
+      
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+      tooltip.style.display = "block";
+    });
+
+    cell.addEventListener("mouseleave", () => {
+      tooltip.style.display = "none";
+    });
+  }
+  
+  // 메모 표시기 추가 (오른쪽 하단)
   const memo = getMemo(formattedDate);
   if (memo.length > 0) {
     const indicator = document.createElement('div');
@@ -1319,8 +1436,7 @@ function createCalendarCell(date) {
       border-radius: 50%;
       position: absolute;
       bottom: 4px;
-      left: 50%;
-      transform: translateX(-50%);
+      right: 4px;
     `;
     cell.appendChild(indicator);
   }
@@ -1551,6 +1667,17 @@ function saveTodoList() {
     pinned: li.dataset.pinned === "true"
   }));
   localStorage.setItem("todoList", JSON.stringify(todos));
+  
+  // 달력 뷰가 표시 중이면 달력 업데이트
+  if (document.getElementById("calendar-view").style.display === "block") {
+    if (calendarMode === "month") {
+      showMonthView();
+    } else if (calendarMode === "week") {
+      showWeekView();
+    } else if (calendarMode === "today") {
+      showTodayView();
+    }
+  }
 }
 
 // 투두리스트 불러오기 함수
