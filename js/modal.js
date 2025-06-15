@@ -5,7 +5,7 @@ const MODAL_TYPES = {
   INPUT: "input",
   CUSTOM: "custom"
 };
-
+ 
 // 모달 스타일 관련 상수
 const MODAL_STYLES = {
   OVERLAY: {

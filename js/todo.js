@@ -250,7 +250,7 @@ function editTodo(li, left, span, checkbox, oldDate, buttonGroup) {
       editTodo(li, left, newSpan, checkbox, selectedDate, buttonGroup);
     });
 
-    renderList();
+    renderList(); 
 
     const isCategoryViewVisible = document.getElementById("category-view").style.display === "block";
     if (isCategoryViewVisible) {
