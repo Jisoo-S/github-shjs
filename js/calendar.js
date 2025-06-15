@@ -154,6 +154,29 @@ function ordinal(n) {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
+function formatDate(date) {
+  if (typeof date === 'string') return date;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getTodosForDate(date) {
+  const todos = JSON.parse(localStorage.getItem('todoList') || '[]');
+  const formattedDate = formatDate(date);
+  return todos.filter(todo => todo.date === formattedDate);
+}
+
+function getPinnedTodosForDate(date) {
+  const todos = JSON.parse(localStorage.getItem('todoList') || '[]');
+  return todos.filter(todo => todo.date === date && todo.pinned);
+}
+
+function areAllTodosCompleted(todos) {
+  return todos.length > 0 && todos.every(todo => todo.completed);
+}
+
 function createCalendarCell(date) {
   const cell = document.createElement("div");
   cell.className = "calendar-cell";
@@ -161,13 +184,14 @@ function createCalendarCell(date) {
   cell.style.cursor = "pointer";
   cell.style.userSelect = "none";
   
-  const formattedDate = date.toISOString().split('T')[0];
+  const formattedDate = formatDate(date);
   cell.dataset.date = formattedDate;
   
   cell.textContent = date.getDate();
   
-  const memo = getMemo(formattedDate);
-  if (memo.length > 0) {
+  // 메모 표시
+  const memos = getMemo(formattedDate);
+  if (memos.length > 0) {
     const indicator = document.createElement('div');
     indicator.className = 'memo-indicator';
     indicator.style.cssText = `
@@ -181,6 +205,109 @@ function createCalendarCell(date) {
       transform: translateX(-50%);
     `;
     cell.appendChild(indicator);
+  }
+
+  // 투두 표시
+  const todos = getTodosForDate(date);
+  if (todos.length > 0) {
+    const todoIndicator = document.createElement('div');
+    todoIndicator.className = 'todo-indicator';
+    const isAllCompleted = areAllTodosCompleted(todos);
+    todoIndicator.style.cssText = `
+      width: 8px;
+      height: 8px;
+      background-color: ${isAllCompleted ? '#999999' : '#ff4d4d'};
+      border-radius: 50%;
+      position: absolute;
+      top: 4px;
+      right: 4px;
+    `;
+    cell.appendChild(todoIndicator);
+
+    // 툴팁 생성
+    const tooltip = document.createElement('div');
+    tooltip.className = 'todo-tooltip';
+    tooltip.style.cssText = `
+      display: none;
+      position: absolute;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      z-index: 1000;
+      min-width: 200px;
+      max-width: 300px;
+    `;
+
+    // 툴팁 내용 업데이트 함수
+    const updateTooltipContent = () => {
+      const currentTodos = getTodosForDate(date);
+      if (currentTodos.length > 0) {
+        tooltip.innerHTML = `
+          <div style="font-weight: bold; margin-bottom: 8px; color: #333;">할일 목록</div>
+          ${currentTodos.map(todo => `
+            <div style="
+              padding: 6px 0;
+              border-bottom: 1px solid #eee;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              ${todo.completed ? 'opacity: 0.6;' : ''}
+            ">
+              <span style="
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background-color: ${todo.category === '업무' ? '#ff9f9f' : 
+                                 todo.category === '개인' ? '#9f9fff' : 
+                                 todo.category === '학습' ? '#9fff9f' : '#ffcc70'};
+                display: inline-block;
+              "></span>
+              <span style="
+                flex: 1;
+                text-decoration: ${todo.completed ? 'line-through' : 'none'};
+                color: ${todo.completed ? '#999' : '#333'};
+              ">${todo.text}</span>
+            </div>
+          `).join('')}
+        `;
+      }
+    };
+
+    // 초기 툴팁 내용 설정
+    updateTooltipContent();
+
+    // 마우스 이벤트 처리
+    cell.addEventListener('mouseenter', (e) => {
+      updateTooltipContent();
+      tooltip.style.display = 'block';
+      
+      // 툴팁 위치 계산
+      const rect = cell.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceRight = window.innerWidth - rect.right;
+      
+      if (spaceBelow >= 200) {
+        tooltip.style.top = '100%';
+        tooltip.style.left = '50%';
+        tooltip.style.transform = 'translateX(-50%)';
+      } else if (spaceRight >= 200) {
+        tooltip.style.top = '50%';
+        tooltip.style.left = '100%';
+        tooltip.style.transform = 'translateY(-50%)';
+      } else {
+        tooltip.style.bottom = '100%';
+        tooltip.style.left = '50%';
+        tooltip.style.transform = 'translateX(-50%)';
+      }
+    });
+
+    cell.addEventListener('mouseleave', () => {
+      tooltip.style.display = 'none';
+    });
+
+    cell.appendChild(tooltip);
   }
   
   cell.addEventListener('click', () => {
@@ -226,38 +353,41 @@ function updateCalendarCell(date) {
 
 // 캘린더 메모 관련 함수들
 function saveMemo(date, memo) {
+  const formattedDate = formatDate(date);
   const memos = JSON.parse(localStorage.getItem('calendar_memos') || '{}');
-  if (!memos[date]) {
-    memos[date] = [];
+  if (!memos[formattedDate]) {
+    memos[formattedDate] = [];
   }
-  if (memo) {
-    memos[date].push({
+  if (memo && !memos[formattedDate].some(m => m.text === memo)) {
+    memos[formattedDate].push({
       id: Date.now(),
       text: memo,
-      date: new Date().toISOString()
+      date: formattedDate
     });
   }
   localStorage.setItem('calendar_memos', JSON.stringify(memos));
 }
 
 function getMemo(date) {
+  const formattedDate = formatDate(date);
   const memos = JSON.parse(localStorage.getItem('calendar_memos') || '{}');
-  return memos[date] || [];
+  return memos[formattedDate] || [];
 }
 
 function deleteMemo(date, memoId) {
+  const formattedDate = formatDate(date);
   const memos = JSON.parse(localStorage.getItem('calendar_memos') || '{}');
-  if (memos[date]) {
-    memos[date] = memos[date].filter(memo => memo.id !== memoId);
-    if (memos[date].length === 0) {
-      delete memos[date];
+  if (memos[formattedDate]) {
+    memos[formattedDate] = memos[formattedDate].filter(memo => memo.id !== memoId);
+    if (memos[formattedDate].length === 0) {
+      delete memos[formattedDate];
     }
     localStorage.setItem('calendar_memos', JSON.stringify(memos));
   }
 }
 
 function showMemoModal(date) {
-  const formattedDate = date.toISOString().split('T')[0];
+  const formattedDate = formatDate(date);
   const memos = getMemo(formattedDate);
   
   const modal = showCustomModal({
@@ -366,16 +496,13 @@ function showMemoModal(date) {
   // 입력 필드 스타일 수정
   const input = modalDiv.querySelector('input');
   if (input) {
-    input.style.width = '100%';
-    input.style.maxWidth = '100%';
-    input.style.padding = '12px';
-    input.style.marginBottom = '20px';
-    input.style.border = '1px solid #ddd';
-    input.style.borderRadius = '10px';
-    input.style.backgroundColor = 'white';
-    input.style.fontSize = '14px';
-    input.style.boxSizing = 'border-box';
-    input.style.outline = 'none';
+    const newInput = input.cloneNode(true);
+    input.parentNode.replaceChild(newInput, input);
+    newInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        modal.modal.querySelector('button').click();
+      }
+    });
   }
 }
 

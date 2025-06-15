@@ -252,15 +252,6 @@ function editTodo(li, left, span, checkbox, oldDate, buttonGroup) {
 
     renderList(); 
 
-    const isCategoryViewVisible = document.getElementById("category-view").style.display === "block";
-    if (isCategoryViewVisible) {
-      setTimeout(() => {
-        handleCategoryChange();
-      }, 100);
-    }
-
-    handleCategoryChange();
-
     saveTodoList();
 
     // 달력 뷰가 표시 중이면 즉시 업데이트

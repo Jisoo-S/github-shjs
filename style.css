@@ -443,11 +443,14 @@ li.completed span {
   box-sizing: border-box;
 }
 
-.delete-btn {
+.delete-btn, .edit-btn, .pin-btn {
   background: none;
   border: none;
   cursor: pointer;
-  opacity: 0.5;
+  opacity: 1 !important;
+  color: #e74c3c !important; /* 진한 빨강(휴지통) */
+  font-size: 16px !important;
+  font-weight: bold !important;
   transition: all 0.2s ease;
   padding: 8px;
   border-radius: 4px;
@@ -456,49 +459,17 @@ li.completed span {
   justify-content: center;
   min-width: 32px;
   min-height: 32px;
-}
-
-.delete-btn:hover {
-  opacity: 1;
-  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .edit-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  opacity: 0.5;
-  transition: all 0.2s ease;
-  padding: 8px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  min-height: 32px;
-}
-
-.edit-btn:hover {
-  opacity: 1;
-  background-color: rgba(0, 0, 0, 0.05);
+  color: #f1c40f !important; /* 진한 노랑(연필) */
 }
 
 .pin-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  opacity: 0.5;
-  transition: all 0.2s ease;
-  padding: 8px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  min-height: 32px;
+  color: #e67e22 !important; /* 진한 주황(핀) */
 }
 
-.pin-btn:hover {
-  opacity: 1;
-  background-color: rgba(0, 0, 0, 0.05);
+.delete-btn:hover, .edit-btn:hover, .pin-btn:hover {
+  opacity: 1 !important;
+  background-color: rgba(0, 0, 0, 0.12);
 }
