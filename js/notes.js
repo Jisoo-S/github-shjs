@@ -70,7 +70,7 @@ function renderNotes() {
 
   sortedNotes.forEach(note => {
     const li = document.createElement('li');
-    li.style.cssText = `
+    li.style.cssText = ` 
       display: flex;
       align-items: center;
       padding: 12px;

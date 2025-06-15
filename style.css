@@ -431,8 +431,7 @@ li.completed span {
 #calendar-note-panel {
   display: flex;
   gap: 20px;
-  /* align-items: flex-start; */ /* 이 줄을 주석 처리하거나 삭제합니다 */
-  align-items: stretch; /* 새로운 메모 패널의 높이를 캘린더와 맞추기 위함 */
+  align-items: flex-start; /* Notes 패널이 길어져도 캘린더가 함께 길어지지 않도록 변경 */
 }
 
 #note-panel {
