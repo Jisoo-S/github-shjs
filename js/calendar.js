@@ -5,7 +5,7 @@ let calendarMode = "month";
 function initializeCalendar() {
   showMonthView();
 } 
-
+ 
 function showMonthView() {
   calendarMode = "month";
 
