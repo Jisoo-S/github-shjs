@@ -326,4 +326,25 @@ document.getElementById("todo-input").addEventListener("keyup", function (event)
   if (event.key === "Enter") {
     addTodo();
   }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  // 모바일 햄버거 메뉴 토글
+  const sidebarToggleBtn = document.getElementById("sidebar-toggle-btn");
+  const sidebar = document.querySelector(".sidebar");
+  if (sidebarToggleBtn && sidebar) {
+    sidebarToggleBtn.addEventListener("click", () => {
+      sidebar.classList.toggle("sidebar--mobile-open");
+    });
+    // 사이드바 바깥 클릭 시 닫기
+    document.addEventListener("click", (e) => {
+      if (
+        sidebar.classList.contains("sidebar--mobile-open") &&
+        !sidebar.contains(e.target) &&
+        e.target !== sidebarToggleBtn
+      ) {
+        sidebar.classList.remove("sidebar--mobile-open");
+      }
+    });
+  }
 }); 

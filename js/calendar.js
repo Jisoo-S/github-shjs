@@ -402,7 +402,13 @@ function showMemoModal(date) {
     onConfirm: (value) => {
       if (value && value.trim()) {
         saveMemo(formattedDate, value.trim());
-        updateCalendarCell(date);
+        if (calendarMode === 'month') {
+          showMonthView();
+        } else if (calendarMode === 'week') {
+          showWeekView();
+        } else if (calendarMode === 'today') {
+          showTodayView();
+        }
       }
     }
   });
@@ -455,7 +461,13 @@ function showMemoModal(date) {
     deleteBtn.onclick = () => {
       deleteMemo(formattedDate, memo.id);
       memoItem.remove();
-      updateCalendarCell(date);
+      if (calendarMode === 'month') {
+        showMonthView();
+      } else if (calendarMode === 'week') {
+        showWeekView();
+      } else if (calendarMode === 'today') {
+        showTodayView();
+      }
     };
 
     memoItem.appendChild(memoText);
@@ -497,9 +509,18 @@ function showMemoModal(date) {
   // 입력 필드 스타일 수정
   const input = modalDiv.querySelector('input');
   if (input) {
-    const newInput = input.cloneNode(true);
-    input.parentNode.replaceChild(newInput, input);
-    newInput.addEventListener('keydown', (e) => {
+    input.style.width = '100%';
+    input.style.maxWidth = '100%';
+    input.style.padding = '12px';
+    input.style.marginBottom = '20px';
+    input.style.border = '1px solid #ddd';
+    input.style.borderRadius = '10px';
+    input.style.backgroundColor = 'white';
+    input.style.fontSize = '14px';
+    input.style.boxSizing = 'border-box';
+    input.style.outline = 'none';
+    // 엔터키로 저장
+    input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         modal.modal.querySelector('button').click();
       }
