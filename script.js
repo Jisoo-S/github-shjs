@@ -1179,7 +1179,7 @@ function saveMemo(date, memo) {
   const memos = JSON.parse(localStorage.getItem('calendar_memos') || '{}');
   if (!memos[date]) {
     memos[date] = [];
-  }
+  } 
   if (memo) {
     memos[date].push({
       id: Date.now(),
