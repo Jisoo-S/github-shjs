@@ -122,6 +122,11 @@ body {
   border: 1px solid #ccc;
 }
 
+#note-input {
+  white-space: pre-wrap !important;
+  overflow-wrap: break-word !important;
+}
+
 #todo-list {
   margin-top: 20px;
   list-style: none;
@@ -426,7 +431,8 @@ li.completed span {
 #calendar-note-panel {
   display: flex;
   gap: 20px;
-  align-items: flex-start;
+  /* align-items: flex-start; */ /* 이 줄을 주석 처리하거나 삭제합니다 */
+  align-items: stretch; /* 새로운 메모 패널의 높이를 캘린더와 맞추기 위함 */
 }
 
 #note-panel {

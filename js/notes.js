@@ -1,71 +1,74 @@
 function saveNotes(notes) {
   localStorage.setItem('calendar_notes', JSON.stringify(notes));
+  console.log('Notes saved to localStorage:', notes);
 }
 
 function getNotes() {
-  return JSON.parse(localStorage.getItem('calendar_notes') || '[]');
+  const savedNotes = localStorage.getItem('calendar_notes');
+  const parsedNotes = JSON.parse(savedNotes || '[]');
+  console.log('Notes loaded from localStorage:', parsedNotes);
+  return parsedNotes;
 }
 
 function addNote() {
   const noteInput = document.getElementById('note-input');
   const text = noteInput.value.trim();
-  const categorySelect = document.getElementById('note-category');
-  const category = categorySelect.value;
   
-  if (!text) return;
+  console.log('addNote called. Input text:', text);
+
+  if (!text) {
+    console.log('No text entered, returning.');
+    return; // 입력값이 없으면 추가하지 않음
+  }
 
   const notes = getNotes();
   const newNote = {
-    id: Date.now(),
+    id: Date.now(), // 고유 ID 생성
     text: text,
-    category: category,
-    completed: false,
-    date: new Date().toISOString()
+    date: new Date().toISOString() // 날짜 정보는 유지
   };
 
   notes.push(newNote);
+  console.log('New note added to array:', newNote);
   saveNotes(notes);
-  renderNotes();
-  noteInput.value = '';
-}
-
-function toggleNoteComplete(id) {
-  const notes = getNotes();
-  const note = notes.find(n => n.id === id);
-  if (note) {
-    note.completed = !note.completed;
-    saveNotes(notes);
-    renderNotes();
-  }
+  renderNotes(); // 메모 추가 후 목록 다시 렌더링
+  noteInput.value = ''; // 입력 필드 초기화
+  console.log('addNote completed. List should be updated.');
 }
 
 function deleteNote(id) {
   const notes = getNotes();
   const filteredNotes = notes.filter(n => n.id !== id);
   saveNotes(filteredNotes);
-  renderNotes();
+  renderNotes(); // 삭제 후 목록 다시 렌더링
 }
 
 function renderNotes() {
   const noteList = document.getElementById('note-list');
+  if (!noteList) {
+    console.error('Error: #note-list element not found in renderNotes.');
+    return;
+  }
+  console.log('Rendering notes...');
+
   const notes = getNotes();
-  const selectedCategory = document.getElementById('note-filter').value;
   
-  // 필터링
-  let filteredNotes = notes;
-  if (selectedCategory) {
-    filteredNotes = filteredNotes.filter(note => note.category === selectedCategory);
+  // 정렬: 최신 메모가 먼저 오도록 날짜 역순 정렬
+  const sortedNotes = notes.sort((a, b) => new Date(b.date) - new Date(a.date));
+  console.log('Sorted notes:', sortedNotes);
+
+  noteList.innerHTML = ''; // 기존 목록을 비우고 새로 그림
+  console.log('noteList cleared. Number of notes to render:', sortedNotes.length);
+  
+  if (sortedNotes.length === 0) {
+    console.log('No notes to display.');
+    const noNotesMessage = document.createElement('li');
+    noNotesMessage.textContent = '메모가 없습니다.';
+    noNotesMessage.style.cssText = 'text-align: center; color: #888; padding: 20px;';
+    noteList.appendChild(noNotesMessage);
   }
 
-  // 정렬: 날짜 > 완료여부
-  filteredNotes.sort((a, b) => {
-    if (a.completed !== b.completed) return a.completed ? 1 : -1;
-    return new Date(b.date) - new Date(a.date);
-  });
-
-  noteList.innerHTML = '';
-  
-  filteredNotes.forEach(note => {
+  sortedNotes.forEach(note => {
     const li = document.createElement('li');
     li.style.cssText = `
       display: flex;
@@ -76,21 +79,7 @@ function renderNotes() {
       border-radius: 10px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       transition: transform 0.2s;
-      ${note.completed ? 'opacity: 0.7;' : ''}
     `;
-
-    // 체크박스
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.checked = note.completed;
-    checkbox.style.cssText = `
-      margin-right: 12px;
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-    `;
-    checkbox.addEventListener('change', () => toggleNoteComplete(note.id));
-    li.appendChild(checkbox);
 
     // 메모 내용
     const content = document.createElement('div');
@@ -101,13 +90,13 @@ function renderNotes() {
     
     const text = document.createElement('div');
     text.style.cssText = `
-      ${note.completed ? 'text-decoration: line-through;' : ''}
       margin-bottom: 4px;
+      white-space: pre-wrap; /* 줄바꿈 유지 */
     `;
     text.textContent = note.text;
     content.appendChild(text);
 
-    // 카테고리와 날짜 정보
+    // 날짜 정보만 유지 (카테고리 제거)
     const meta = document.createElement('div');
     meta.style.cssText = `
       font-size: 12px;
@@ -116,15 +105,6 @@ function renderNotes() {
       gap: 8px;
     `;
     
-    const categorySpan = document.createElement('span');
-    categorySpan.textContent = note.category;
-    categorySpan.style.cssText = `
-      background: #f0f0f0;
-      padding: 2px 6px;
-      border-radius: 4px;
-    `;
-    meta.appendChild(categorySpan);
-
     const dateSpan = document.createElement('span');
     dateSpan.textContent = new Date(note.date).toLocaleDateString();
     meta.appendChild(dateSpan);
@@ -149,55 +129,50 @@ function renderNotes() {
     li.appendChild(deleteBtn);
 
     noteList.appendChild(li);
+    console.log('Appended note:', note.text);
   });
+  console.log('Finished rendering notes.');
 }
 
-// Notes 패널 초기화
+// Notes 패널 초기화 (HTML이 직접 정의하는 경우 이 함수는 UI 구성보다는 이벤트 리스너 연결 및 초기 렌더링에 집중)
 function initializeNotesPanel() {
-  const notePanel = document.getElementById('note-panel');
-  notePanel.innerHTML = `
-    <div style="margin-bottom: 20px;">
-      <div style="display: flex; gap: 8px;">
-        <select id="note-category" style="flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
-          <option value="📝 일반">📝 일반</option>
-          <option value="📚 공부">📚 공부</option>
-          <option value="🏃 운동">🏃 운동</option>
-          <option value="🛒 쇼핑">🛒 쇼핑</option>
-          <option value="💼 업무">💼 업무</option>
-        </select>
-      </div>
-    </div>
-    <div style="margin-bottom: 20px;">
-      <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-        <input type="text" id="note-input" placeholder="새 메모..." 
-          style="flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
-        <button onclick="addNote()" 
-          style="padding: 8px 16px; background: #ffcc70; color: white; border: none; border-radius: 8px; cursor: pointer;">
-          추가
-        </button>
-      </div>
-    </div>
-    <div style="margin-bottom: 10px;">
-      <select id="note-filter" onchange="renderNotes()" 
-        style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
-        <option value="">모든 카테고리</option>
-        <option value="📝 일반">📝 일반</option>
-        <option value="📚 공부">📚 공부</option>
-        <option value="🏃 운동">🏃 운동</option>
-        <option value="🛒 쇼핑">🛒 쇼핑</option>
-        <option value="💼 업무">💼 업무</option>
-      </select>
-    </div>
-    <ul id="note-list" style="list-style: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto;"></ul>
-  `;
+  // HTML에서 직접 정의된 요소에 이벤트 리스너만 연결
+  const addNoteButton = document.querySelector('#note-panel button[onclick="addNote()"]');
+  if (addNoteButton) {
+    addNoteButton.onclick = addNote; // 기존 onclick 속성 제거하고 이벤트 리스너로 연결
+  }
 
-  // 엔터 키로 메모 추가
-  document.getElementById('note-input').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      addNote();
-    }
-  });
+  // 엔터 키로 메모 추가 (Ctrl+Enter 줄바꿈)
+  const noteInput = document.getElementById('note-input');
+  if (noteInput) {
+    noteInput.addEventListener('keydown', (e) => { // keydown 이벤트로 변경
+      console.log('Key pressed: ', e.key, ' | CtrlKey: ', e.ctrlKey, ' | ShiftKey: ', e.shiftKey, ' | AltKey: ', e.altKey);
+      if (e.key === 'Enter') {
+        console.log('Enter key detected.');
+        if (e.ctrlKey) {
+          console.log('Ctrl + Enter detected. Manually inserting newline.');
+          e.preventDefault(); // 기본 동작 방지 (수동 줄바꿈 삽입을 위해)
+
+          // 현재 커서 위치에 줄바꿈 문자 삽입
+          const start = noteInput.selectionStart;
+          const end = noteInput.selectionEnd;
+          noteInput.value = noteInput.value.substring(0, start) + "\n" + noteInput.value.substring(end);
+          
+          // 커서 위치 업데이트
+          noteInput.selectionStart = noteInput.selectionEnd = start + 1;
+          console.log('After Ctrl+Enter, textarea value:', JSON.stringify(noteInput.value)); // 새 로그
+
+        } else {
+          console.log('Plain Enter detected. Preventing default and adding note.');
+          // Enter만: 메모 추가
+          e.preventDefault(); // 기본 Enter 동작 (폼 제출/줄바꿈) 방지
+          addNote();
+        }
+      }
+    });
+  }
 
   // 초기 렌더링
   renderNotes();
+  console.log('Notes Panel initialized.');
 } 
