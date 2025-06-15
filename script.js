@@ -1177,46 +1177,99 @@ document.addEventListener("DOMContentLoaded", () => {
 // 캘린더 메모 관련 함수들
 function saveMemo(date, memo) {
   const memos = JSON.parse(localStorage.getItem('calendar_memos') || '{}');
-  memos[date] = memo;
+  if (!memos[date]) {
+    memos[date] = [];
+  }
+  if (memo) {
+    memos[date].push({
+      id: Date.now(),
+      text: memo,
+      date: new Date().toISOString()
+    });
+  }
   localStorage.setItem('calendar_memos', JSON.stringify(memos));
 }
 
 function getMemo(date) {
   const memos = JSON.parse(localStorage.getItem('calendar_memos') || '{}');
-  return memos[date] || '';
+  return memos[date] || [];
+}
+
+function deleteMemo(date, memoId) {
+  const memos = JSON.parse(localStorage.getItem('calendar_memos') || '{}');
+  if (memos[date]) {
+    memos[date] = memos[date].filter(memo => memo.id !== memoId);
+    if (memos[date].length === 0) {
+      delete memos[date];
+    }
+    localStorage.setItem('calendar_memos', JSON.stringify(memos));
+  }
 }
 
 function showMemoModal(date) {
   const formattedDate = date.toISOString().split('T')[0];
-  const existingMemo = getMemo(formattedDate);
+  const memos = getMemo(formattedDate);
   
   const message = `
-    <div style="margin-bottom: 10px;">
+    <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
       <strong>${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일</strong>
     </div>
+    <div id="memo-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 10px;">
+      ${memos.map(memo => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 8px; background: #f5f5f5; border-radius: 8px;">
+          <div style="flex: 1; margin-right: 10px;">${memo.text}</div>
+          <button class="memo-delete-btn" data-id="${memo.id}" style="background: none; border: none; cursor: pointer; font-size: 16px; opacity: 0.5;">🗑️</button>
+        </div>
+      `).join('')}
+    </div>
     <textarea id="memo-textarea" 
-      style="width: 100%; height: 150px; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; resize: none;"
-      placeholder="메모를 입력하세요...">${existingMemo}</textarea>
+      style="width: 100%; height: 100px; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; resize: none;"
+      placeholder="새 메모를 입력하세요..."></textarea>
   `;
 
   showModal(message, false, (confirmed) => {
     if (confirmed) {
       const memo = document.getElementById('memo-textarea').value.trim();
-      saveMemo(formattedDate, memo);
-      updateCalendarCell(date);
+      if (memo) {
+        saveMemo(formattedDate, memo);
+        updateCalendarCell(date);
+      }
     }
   });
+
+  setTimeout(() => {
+    // 삭제 버튼 이벤트 리스너 추가
+    document.querySelectorAll('.memo-delete-btn').forEach(btn => {
+      btn.addEventListener('mouseover', () => btn.style.opacity = '1');
+      btn.addEventListener('mouseout', () => btn.style.opacity = '0.5');
+      btn.addEventListener('click', () => {
+        const memoId = parseInt(btn.dataset.id);
+        deleteMemo(formattedDate, memoId);
+        updateCalendarCell(date);
+        showMemoModal(date); // 모달 새로고침
+      });
+    });
+
+    // textarea에 엔터키 이벤트 리스너 추가
+    const textarea = document.getElementById('memo-textarea');
+    textarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        document.getElementById('modal-confirm').click();
+      }
+    });
+  }, 100);
 }
 
 function updateCalendarCell(date) {
   const formattedDate = date.toISOString().split('T')[0];
-  const memo = getMemo(formattedDate);
+  const memos = getMemo(formattedDate);
   const cells = document.querySelectorAll('.calendar-cell');
   
   cells.forEach(cell => {
     const cellDate = cell.dataset.date;
     if (cellDate === formattedDate) {
-      if (memo) {
+      if (memos.length > 0) {
         if (!cell.querySelector('.memo-indicator')) {
           const indicator = document.createElement('div');
           indicator.className = 'memo-indicator';
@@ -1256,7 +1309,7 @@ function createCalendarCell(date) {
   
   // 메모 표시기 추가
   const memo = getMemo(formattedDate);
-  if (memo) {
+  if (memo.length > 0) {
     const indicator = document.createElement('div');
     indicator.className = 'memo-indicator';
     indicator.style.cssText = `
