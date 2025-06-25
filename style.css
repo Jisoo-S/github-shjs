@@ -15,7 +15,7 @@ body {
   align-items: center;
   position: fixed;
 }
-   
+ 
 .sidebar button, .sidebar .icon {
   margin: 20px 0;
   background: none;
@@ -100,6 +100,14 @@ body {
   margin-top: 30px;
   display: flex;
   gap: 10px;
+  align-items: center;
+}
+
+.input-section button, .input-section > div > button {
+  vertical-align: middle;
+  display: inline-block;
+  justify-content: unset;
+  align-items: unset;
 }
 
 .pin-active {
@@ -301,6 +309,17 @@ li.completed span {
   #login-form button {
     font-size: 14px;
     padding: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  #login-form {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 24px 12px !important;
   }
 }
 
@@ -507,30 +526,26 @@ li.completed span {
   }
   #sidebar-toggle-btn {
     display: block !important;
-    width: 44px;
-    height: 44px;
-    font-size: 32px;
-    border-radius: 12px;
-    background: #fff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    position: fixed !important;
+    left: 0 !important;
+    top: 16px !important;
+    margin-left: 8px !important;
+    transform: none !important;
+    z-index: 3000 !important;
   }
   .sidebar {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 60px;
-    max-width: 60px;
-    min-width: 60px;
-    height: 100vh;
-    background: #fceffb;
-    z-index: 1500;
-    box-shadow: 2px 0 8px rgba(0,0,0,0.08);
-    transition: left 0.2s;
-    padding-top: 16px;
-    padding-left: 0;
-    padding-right: 0;
-    align-items: center;
+    display: none !important;
+    padding-top: 70px !important;
+    align-items: center !important;
+    width: 60px !important;
+    left: 0 !important;
+    top: 0 !important;
+    height: 100vh !important;
+    position: fixed !important;
+    z-index: 2000 !important;
+  }
+  .sidebar.sidebar--mobile-open {
+    display: flex !important;
   }
   .sidebar button, .sidebar .icon {
     width: 44px;
@@ -555,8 +570,10 @@ li.completed span {
   }
   #calendar-container, #note-panel {
     width: 100% !important;
-    padding: 8px !important;
-    border-radius: 0 !important;
+    min-width: 0 !important;
+    max-width: 480px !important;
+    box-sizing: border-box !important;
+    margin: 0 auto !important;
   }
   #calendar-grid {
     font-size: 13px !important;
@@ -565,24 +582,439 @@ li.completed span {
     font-size: 15px !important;
     padding: 10px 8px !important;
   }
+  .only-mobile { display: inline-block !important; }
+  .only-pc { display: none !important; }
+  .input-section {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 0 4px !important;
+  }
+  .input-section > * {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100px !important;
+    font-size: 16px !important;
+    padding: 6px 8px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+  #todo-input {
+    flex: 1 1 120px !important;
+    min-width: 60px !important;
+    max-width: 180px !important;
+  }
+  #mobile-date-btn, #mobile-category-btn, #mobile-date-input, #mobile-category-select, .only-mobile {
+    min-width: 32px !important;
+    max-width: 40px !important;
+    padding: 6px 0 !important;
+    text-align: center !important;
+  }
+  #mobile-date-input, #mobile-category-select {
+    position: absolute;
+    top: 48px;
+    left: 0;
+    z-index: 4000;
+    width: 120px !important;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 8px !important;
+  }
+  /* 캘린더 뷰 모바일 전용 레이아웃 - 여유 있게 조정 */
+  #calendar-view {
+    margin-left: 0 !important;
+    padding: 18px 8px 18px 8px !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    background: #f4edf7 !important;
+    box-sizing: border-box;
+    padding-top: 36px !important;
+  }
+  #calendar-view h2 {
+    font-size: 1.25em !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin: 0 0 14px 0 !important;
+    padding: 0 4px !important;
+    background: none !important;
+    justify-content: flex-end !important;
+    text-align: right !important;
+    padding-right: 32px !important;
+  }
+  #calendar-control {
+    display: flex !important;
+    gap: 12px !important;
+    margin: 0 auto 14px auto !important;
+    justify-content: flex-start !important;
+    padding: 0 4px !important;
+    max-width: 480px !important;
+  }
+  .calendar-btn {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    font-size: 1.08em !important;
+    padding: 12px 0 !important;
+    margin: 0 !important;
+    border-radius: 14px !important;
+  }
+  #calendar-note-panel {
+    flex-direction: column !important;
+    gap: 18px !important;
+    margin-top: 10px !important;
+    width: 100% !important;
+    padding: 0 2px !important;
+  }
+  #calendar-container {
+    width: 100% !important;
+    padding: 10px 8px 18px 8px !important;
+    border-radius: 16px !important;
+    background: #fff !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+  }
+  #calendar-title {
+    font-size: 1.08em !important;
+    padding: 6px 16px !important;
+    border-radius: 12px !important;
+    margin: 0 0 8px 0 !important;
+    background: #ffe0fa !important;
+  }
+  #calendar-grid {
+    font-size: 15px !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    padding: 2px 0 2px 0 !important;
+  }
+  #note-panel {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100vw !important;
+    border-radius: 16px !important;
+    padding: 18px 10px 20px 10px !important;
+    margin: 0 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+    background: #f9f9f9 !important;
+  }
+  #note-panel h3 {
+    font-size: 1.13em !important;
+    margin-bottom: 10px !important;
+  }
+  #note-input {
+    font-size: 1.05em !important;
+    padding: 10px !important;
+    border-radius: 10px !important;
+  }
+  #note-list {
+    font-size: 1.05em !important;
+  }
+  #calendar-control {
+    max-width: 360px !important;
+    padding: 0 4px !important;
+  }
+  #calendar-container {
+    max-width: 360px !important;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+  }
+  #note-panel {
+    max-width: 360px !important;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+    margin: 0 auto !important;
+  }
+  #calendar-view h2 {
+    justify-content: flex-end !important;
+    text-align: right !important;
+    padding-right: 32px !important;
+  }
+  #category-view {
+    margin-left: 0 !important;
+    padding: 18px 8px 18px 8px !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    background: #f4edf7 !important;
+    box-sizing: border-box;
+    padding-top: 56px !important;
+  }
+  #category-view h2 {
+    font-size: 1.25em !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    text-align: right !important;
+    margin: 0 0 14px 0 !important;
+    padding: 0 32px 0 0 !important;
+    background: none !important;
+  }
+  #category-view > div {
+    max-width: 360px !important;
+    margin: 0 auto !important;
+    border-radius: 18px !important;
+    padding: 24px 10px 24px 10px !important;
+    background: #e5e5e5 !important;
+    box-sizing: border-box !important;
+  }
+  #category-edit-select {
+    width: 100% !important;
+    max-width: 320px !important;
+    margin: 0 auto 18px auto !important;
+    display: block !important;
+    font-size: 1.08em !important;
+    border-radius: 20px !important;
+    padding: 10px 16px !important;
+  }
+  #category-view button {
+    font-size: 1.1em !important;
+    border-radius: 18px !important;
+    padding: 18px 0 10px 0 !important;
+    margin: 0 8px !important;
+    min-width: 80px !important;
+    max-width: 120px !important;
+  }
+  #category-view .buttons {
+    gap: 12px !important;
+    justify-content: center !important;
+  }
+  #category-title {
+    font-size: 1.25em !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    text-align: right !important;
+    margin: 0 0 14px 0 !important;
+    padding: 0 32px 0 0 !important;
+    background: none !important;
+    height: 38px !important;
+    line-height: 38px !important;
+  }
+  #category-box {
+    width: 100% !important;
+    max-width: 360px !important;
+    margin: 0 auto !important;
+    border-radius: 18px !important;
+    padding: 24px 10px 24px 10px !important;
+    background: #e5e5e5 !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  #category-edit-select {
+    width: 100% !important;
+    max-width: 340px !important;
+    margin: 0 auto 18px auto !important;
+    display: block !important;
+    font-size: 1.08em !important;
+    border-radius: 20px !important;
+    padding: 10px 16px !important;
+  }
+  #category-btns {
+    display: flex !important;
+    gap: 12px !important;
+    width: 100% !important;
+    max-width: 340px !important;
+    margin: 0 auto !important;
+    justify-content: space-between !important;
+  }
+  #category-btns button {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    font-size: 1.1em !important;
+    border-radius: 18px !important;
+    padding: 18px 0 10px 0 !important;
+    margin: 0 !important;
+  }
+  #category-todo-result {
+    margin-top: 80px !important;
+    max-width: 360px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  #category-todo-result li, .category-todo-item {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 4px 0 !important;
+    border-bottom: 1px solid #ddd !important;
+    font-size: 0.97em !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    line-height: 1.2 !important;
+  }
+  #category-todo-result .todo-title {
+    flex: 2 1 0 !important;
+    min-width: 60px !important;
+    max-width: 120px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    word-break: break-all !important;
+  }
+  #category-todo-result .todo-date {
+    flex: 1.2 1 0 !important;
+    min-width: 60px !important;
+    max-width: 90px !important;
+    font-size: 0.93em !important;
+    color: #888;
+    text-align: center;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  #category-todo-result .todo-category {
+    flex: 1 1 0 !important;
+    min-width: 50px !important;
+    max-width: 80px !important;
+    font-size: 0.93em !important;
+    color: #666;
+    text-align: center;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  #category-todo-result .button-group {
+    flex: 0 0 auto !important;
+    display: flex !important;
+    gap: 2px !important;
+    margin-left: auto !important;
+  }
+  #category-todo-result .button-group button {
+    min-width: 28px !important;
+    min-height: 28px !important;
+    font-size: 1.1em !important;
+    padding: 0 !important;
+  }
+  #category-todo-result .todo-category span {
+    display: flex !important;
+    align-items: center !important;
+    height: 28px !important;
+    padding: 0 8px !important;
+    margin: 0 !important;
+    font-size: 0.97em !important;
+    background: #eee !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    border: none !important;
+    white-space: nowrap !important;
+    min-width: 0 !important;
+    max-width: 100%;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  #category-todo-result .button-group {
+    gap: 0 !important;
+  }
+  #category-todo-result .button-group button {
+    min-width: 22px !important;
+    min-height: 22px !important;
+    font-size: 1em !important;
+    padding: 0 !important;
+  }
+  #category-todo-result li .todo-left {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-width: 0 !important;
+    width: auto !important;
+    white-space: nowrap !important;
+    flex-wrap: nowrap !important;
+    overflow: hidden !important;
+  }
+  #category-todo-result li .button-group {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0 !important;
+    margin: 0 0 0 auto !important;
+    padding: 0 !important;
+    min-width: 0 !important;
+    width: auto !important;
+    flex-wrap: nowrap !important;
+  }
+  #category-todo-result .todo-title {
+    flex: 2 1 0 !important;
+    min-width: 60px !important;
+    max-width: 120px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    word-break: break-all !important;
+  }
+  #category-todo-result .todo-date {
+    flex: 1.2 1 0 !important;
+    min-width: 60px !important;
+    max-width: 90px !important;
+    font-size: 0.93em !important;
+    color: #888;
+    text-align: center;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  #category-todo-result .todo-category {
+    flex: 1 1 0 !important;
+    min-width: 50px !important;
+    max-width: 80px !important;
+    font-size: 0.93em !important;
+    color: #666;
+    text-align: center;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  #category-todo-result .todo-category span {
+    display: flex !important;
+    align-items: center !important;
+    height: 28px !important;
+    padding: 0 8px !important;
+    margin: 0 !important;
+    font-size: 0.97em !important;
+    background: #eee !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    border: none !important;
+    white-space: nowrap !important;
+    min-width: 0 !important;
+    max-width: 100%;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  #friends-view h2 {
+    font-size: 1.25em !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    text-align: right !important;
+    margin: 36px 0 14px 0 !important;
+    padding: 0 32px 0 0 !important;
+    background: none !important;
+    height: 38px !important;
+    line-height: 38px !important;
+  }
+  #login-form {
+    max-width: 350px !important;
+    margin-left: 0 !important;
+    margin-right: auto !important;
+  }
+  #calendar-view, #category-view {
+    background: #f4edf7 !important;
+  }
 }
 
 /* PC: 사이드바 항상 보이기, 햄버거 버튼 숨기기 */
 @media (min-width: 601px) {
-  #sidebar-toggle-btn {
-    display: none !important;
-  }
-  .sidebar {
-    display: flex !important;
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 80px;
-    height: 100vh;
-    z-index: 100;
+  #login-form {
+    /* 최근 추가된 margin-left, margin-right 삭제 */
   }
   .main {
-    margin-left: 100px;
-    padding: 20px;
+    /* 최근 추가된 padding-left 삭제 */
   }
 }
