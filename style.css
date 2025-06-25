@@ -519,39 +519,35 @@ li.completed span {
     position: fixed;
     top: 0;
     left: 0;
-    width: 60vw;
-    max-width: 240px;
-    min-width: 120px;
+    width: 60px;
+    max-width: 60px;
+    min-width: 60px;
     height: 100vh;
     background: #fceffb;
     z-index: 1500;
     box-shadow: 2px 0 8px rgba(0,0,0,0.08);
     transition: left 0.2s;
-    padding-top: 60px;
+    padding-top: 16px;
     padding-left: 0;
     padding-right: 0;
-    align-items: stretch;
-  }
-  .sidebar.sidebar--mobile-open {
-    display: flex !important;
-    flex-direction: column;
-    align-items: stretch;
-    padding-top: 60px;
+    align-items: center;
   }
   .sidebar button, .sidebar .icon {
-    width: 100%;
-    min-height: 54px;
-    font-size: 20px;
-    border-radius: 0;
+    width: 44px;
+    min-height: 44px;
+    font-size: 26px;
+    border-radius: 12px;
     background: none;
     border: none;
-    text-align: left;
-    padding: 0 24px;
-    margin: 0;
+    text-align: center;
+    margin: 8px 0;
     color: #333;
     font-weight: 500;
-    border-bottom: 1px solid #f3d6f7;
-    transition: background 0.15s;
+    box-shadow: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .sidebar button:active, .sidebar button:focus, .sidebar .icon:active {
     background: #ffe0fa;

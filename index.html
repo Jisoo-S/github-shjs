@@ -20,10 +20,10 @@
   <div class="main">
     <div class="header-card">
       <h1>To do list</h1>
-      <div class="subtitle">Subtitle</div>
-      <div class="buttons">
-        <button id="toggle-completed">📌 Show / Hide</button>
-        <button>🚶 12 mins from hotel</button>
+      <div class="subtitle">Click the 👍 button to log in.</div>
+      <div class="buttons" style="display: flex; gap: 4px;">
+        <button id="toggle-show" style="display: inline-block;">👀 Show</button>
+        <button id="toggle-hide" style="display: inline-block;">🙈 Hide</button>
       </div> 
     </div>  
 
@@ -97,23 +97,28 @@
 
   <div id="category-view" style="display: none; padding: 20px; margin-left: 100px;">
     <h2 style="font-size: 28px;">CATEGORY</h2>
-    <div style="background: #ccc; border-radius: 20px; padding: 40px; width: 250px;">
-      <select id="category-edit-select" style="font-size: 16px; padding: 8px 12px; border-radius: 20px; border: 1px solid #ccc;">
+    <div style="background: #ccc; border-radius: 20px; padding: 40px; width: 260px; display: flex; flex-direction: column; align-items: flex-start;">
+      <select id="category-edit-select" style="font-size: 16px; padding: 8px 12px; border-radius: 20px; border: 1px solid #ccc; margin-bottom: 16px; width: 100%; text-align: center;">
         <option value="">Category</option>
         <option value="📚 Study">📚 Study</option>
         <option value="🧳 Travel">🧳 Travel</option>
         <option value="🛒 Shopping">🛒 Shopping</option>
         <option value="💼 Work">💼 Work</option>
       </select>
-
-      <button id="add-category-btn" style="margin-top: 20px; padding: 8px 12px; border-radius: 20px; border: none; background-color: #ffe08a; cursor: pointer;">
-        ➕ Add Category
-      </button>
-      <button id="delete-category-btn" style="margin-top: 10px; padding: 6px 10px; border-radius: 20px; border: none; background-color: #ff9f9f; cursor: pointer;">
-        🗑 Delete
-      </button>
-      
-      
+      <div style="display: flex; gap: 12px; justify-content: flex-start; width: 100%;">
+        <button id="add-category-btn" style="flex: 1; padding: 18px 0 10px 0; border-radius: 20px; border: none; background-color: #ffe08a; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 18px;">
+          <span style="font-size: 1.6em; line-height: 1;">➕</span>
+          <span style="margin-top: 4px; font-weight: 500;">Add</span>
+        </button>
+        <button id="edit-category-btn" style="flex: 1; padding: 18px 0 10px 0; border-radius: 20px; border: none; background-color: #b3e5fc; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 18px;">
+          <span style="font-size: 1.6em; line-height: 1;">✏️</span>
+          <span style="margin-top: 4px; font-weight: 500;">Edit</span>
+        </button>
+        <button id="delete-category-btn" style="flex: 1; padding: 18px 0 10px 0; border-radius: 20px; border: none; background-color: #ff9f9f; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 18px;">
+          <span style="font-size: 1.6em; line-height: 1;">🗑️</span>
+          <span style="margin-top: 4px; font-weight: 500;">Delete</span>
+        </button>
+      </div>
     </div>
     <!--<div id="category-todo-result" style="margin-top: 30px; list-style: none; padding: 0;"></div>-->
     <div id="category-todo-result" style="

@@ -28,100 +28,48 @@ function ordinal(n) {
 }
 
 // 모달 관련 유틸리티 함수
-function showModal(message, isInput = false, callback) {
-  const modal = document.createElement("div");
-  modal.className = "modal";
-  modal.style.position = "fixed";
-  modal.style.top = "0";
-  modal.style.left = "0";
-  modal.style.width = "100%";
-  modal.style.height = "100%";
-  modal.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-  modal.style.display = "flex";
-  modal.style.justifyContent = "center";
-  modal.style.alignItems = "center";
-  modal.style.zIndex = "1000";
+function showModal(message, hasInput = false, callback = () => {}) {
+  const overlay = document.getElementById("modal-overlay");
+  const modal = document.getElementById("custom-modal");
+  const messageEl = document.getElementById("modal-message");
+  const inputEl = document.getElementById("modal-input");
+  const confirmBtn = document.getElementById("modal-confirm");
+  const cancelBtn = document.getElementById("modal-cancel");
 
-  const modalContent = document.createElement("div");
-  modalContent.style.backgroundColor = "white";
-  modalContent.style.padding = "20px";
-  modalContent.style.borderRadius = "10px";
-  modalContent.style.width = "300px";
-  modalContent.style.maxWidth = "90%";
+  messageEl.innerHTML = message;
+  overlay.classList.remove("hidden");
 
-  const messageElement = document.createElement("p");
-  messageElement.innerHTML = message;
-  messageElement.style.marginBottom = "20px";
-  messageElement.style.textAlign = "center";
+  if (hasInput) {
+    inputEl.classList.remove("hidden");
+    inputEl.value = "";
+    inputEl.focus();
 
-  const buttonContainer = document.createElement("div");
-  buttonContainer.style.display = "flex";
-  buttonContainer.style.justifyContent = "center";
-  buttonContainer.style.gap = "10px";
-
-  let inputElement = null;
-  if (isInput) {
-    inputElement = document.createElement("input");
-    inputElement.type = "text";
-    inputElement.style.width = "100%";
-    inputElement.style.padding = "8px";
-    inputElement.style.marginBottom = "20px";
-    inputElement.style.border = "1px solid #ccc";
-    inputElement.style.borderRadius = "5px";
-    modalContent.insertBefore(inputElement, buttonContainer);
-  }
-
-  const confirmButton = document.createElement("button");
-  confirmButton.textContent = "확인";
-  confirmButton.style.padding = "8px 16px";
-  confirmButton.style.border = "none";
-  confirmButton.style.borderRadius = "5px";
-  confirmButton.style.backgroundColor = "#4CAF50";
-  confirmButton.style.color = "white";
-  confirmButton.style.cursor = "pointer";
-
-  const cancelButton = document.createElement("button");
-  cancelButton.textContent = "취소";
-  cancelButton.style.padding = "8px 16px";
-  cancelButton.style.border = "none";
-  cancelButton.style.borderRadius = "5px";
-  cancelButton.style.backgroundColor = "#f44336";
-  cancelButton.style.color = "white";
-  cancelButton.style.cursor = "pointer";
-
-  buttonContainer.appendChild(confirmButton);
-  buttonContainer.appendChild(cancelButton);
-  modalContent.appendChild(messageElement);
-  modalContent.appendChild(buttonContainer);
-  modal.appendChild(modalContent);
-  document.body.appendChild(modal);
-
-  if (inputElement) {
-    inputElement.focus();
-  }
-
-  return new Promise((resolve) => {
-    confirmButton.onclick = () => {
-      const value = isInput ? inputElement.value : true;
-      document.body.removeChild(modal);
-      if (callback) callback(value);
-      resolve(value);
-    };
-
-    cancelButton.onclick = () => {
-      document.body.removeChild(modal);
-      if (callback) callback(false);
-      resolve(false);
-    };
-
-    modal.onclick = (e) => {
-      if (e.target === modal) {
-        document.body.removeChild(modal);
-        if (callback) callback(false);
-        resolve(false);
+    inputEl.onkeydown = (e) => {
+      if (e.key === "Enter") {
+        confirmBtn.click();
       }
     };
-  });
+  } else {
+    inputEl.classList.add("hidden");
+  }
+
+  const close = () => {
+    overlay.classList.add("hidden");
+    confirmBtn.onclick = null;
+    cancelBtn.onclick = null;
+    inputEl.onkeydown = null;
+  };
+
+  confirmBtn.onclick = () => {
+    const value = hasInput ? inputEl.value.trim() : true;
+    close();
+    callback(value);
+  };
+
+  cancelBtn.onclick = () => {
+    close();
+    callback(null);
+  };
 }
 
 // 로컬 스토리지 관련 유틸리티 함수

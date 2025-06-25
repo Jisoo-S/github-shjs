@@ -18,6 +18,7 @@ function addTodo() {
   if (!value) return;
 
   const list = document.getElementById("todo-list");
+  list.style.display = "block";
 
   const li = document.createElement("li");
   li.dataset.category = categoryValue;
@@ -30,6 +31,7 @@ function addTodo() {
   checkbox.type = "checkbox";
   checkbox.addEventListener("change", () => {
     li.classList.toggle("completed");
+    renderList();
     saveTodoList();
   });
 
@@ -136,17 +138,16 @@ function renderList() {
   const list = document.getElementById("todo-list");
   const items = Array.from(list.children);
 
+  // 1. 미완료 먼저, 완료는 나중에
+  // 2. 같은 상태 내에서는 날짜 오름차순(미래가 아래)
   items.sort((a, b) => {
-    const pinnedA = a.dataset.pinned === "true";
-    const pinnedB = b.dataset.pinned === "true";
-
-    if (pinnedA !== pinnedB) {
-      return pinnedB - pinnedA;
-    }
-
-    const dateA = a.dataset.date || "";
-    const dateB = b.dataset.date || "";
-    return dateA.localeCompare(dateB);
+    const aCompleted = a.classList.contains("completed");
+    const bCompleted = b.classList.contains("completed");
+    if (aCompleted !== bCompleted) return aCompleted ? 1 : -1;
+    // 같은 상태면 날짜 비교
+    const aDate = a.dataset.date || "9999-12-31";
+    const bDate = b.dataset.date || "9999-12-31";
+    return aDate.localeCompare(bDate);
   });
 
   items.forEach(item => list.appendChild(item));
@@ -347,4 +348,30 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+});
+
+const todoList = document.getElementById("todo-list");
+const hideBtn = document.getElementById("toggle-hide");
+const showBtn = document.getElementById("toggle-show");
+
+// 두 버튼 모두 항상 보이게
+hideBtn.style.display = "inline-block";
+showBtn.style.display = "inline-block";
+
+hideBtn.addEventListener("click", () => {
+  const todoItems = document.querySelectorAll("#todo-list li");
+  todoItems.forEach(li => {
+    if (li.classList.contains("completed")) {
+      li.style.display = "none";
+    }
+  });
+});
+
+showBtn.addEventListener("click", () => {
+  const todoItems = document.querySelectorAll("#todo-list li");
+  todoItems.forEach(li => {
+    if (li.classList.contains("completed")) {
+      li.style.display = "";
+    }
+  });
 }); 

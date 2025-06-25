@@ -192,19 +192,18 @@ addCategoryBtn.addEventListener("click", () => {
   showModal("추가할 카테고리 이름을 입력하세요", true, (value) => {
     if (!value) return;
 
-    const fullCategory = value;
+    const fullCategory = value.trim();
     const exists = [...categorySelect.options].some(opt => opt.value === fullCategory);
+    
     if (exists) {
-      setTimeout(() => {
-        showModal("이미 존재하는 카테고리입니다.", false, () => {});
-      }, 0);
+      showModal("이미 존재하는 카테고리입니다.", false, () => {});
       return;
     }
 
-    const option1 = new Option(fullCategory, fullCategory);
-    const option2 = new Option(fullCategory, fullCategory);
-    categorySelect.add(option1);
-    editSelect.add(option2);
+    const newOption1 = new Option(fullCategory, fullCategory);
+    const newOption2 = new Option(fullCategory, fullCategory);
+    categorySelect.add(newOption1);
+    editSelect.add(newOption2);
   });
 });
 
@@ -239,5 +238,41 @@ deleteCategoryBtn.addEventListener("click", () => {
     });
 
     showModal(`'${selected}'<br>카테고리가 삭제되었습니다.`, false, () => {});
+  });
+});
+
+const editCategoryBtn = document.getElementById("edit-category-btn");
+
+editCategoryBtn.addEventListener("click", () => {
+  const selected = editSelect.value;
+  if (!selected) {
+    showModal("수정할 카테고리를 선택하세요.", false, () => {});
+    return;
+  }
+
+  showModal("카테고리의 새로운 이름을 작성해주세요.", true, (newName) => {
+    if (!newName) return;
+    const exists = [...categorySelect.options].some(opt => opt.value === newName);
+    if (exists) {
+      showModal("이미 존재하는 카테고리입니다.", false, () => {});
+      return;
+    }
+    // select option 값 변경
+    [...editSelect.options].forEach(opt => {
+      if (opt.value === selected) opt.text = opt.value = newName;
+    });
+    [...categorySelect.options].forEach(opt => {
+      if (opt.value === selected) opt.text = opt.value = newName;
+    });
+    // 기존 할 일의 카테고리 값도 변경
+    const allTodos = document.querySelectorAll("#todo-list li");
+    allTodos.forEach(li => {
+      if (li.dataset.category === selected) {
+        li.dataset.category = newName;
+        const catSpan = [...li.querySelectorAll("span")].find(span => span.textContent === selected);
+        if (catSpan) catSpan.textContent = newName;
+      }
+    });
+    showModal("카테고리 이름이 수정되었습니다.", false, () => {});
   });
 }); 
