@@ -750,44 +750,44 @@ li.completed span {
     background: none !important;
   }
   #category-view > div {
-    width: 420px !important;
+    width: 90vw !important;
     max-width: 420px !important;
-    min-width: 420px !important;
+    min-width: 300px !important;
     margin: 0 auto !important;
     border-radius: 18px !important;
-    padding: 24px 10px 24px 10px !important;
+    padding: 5vw 3vw 5vw 3vw !important;
     background: #e5e5e5 !important;
     box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    min-height: 160px !important;
+    min-height: 25vh !important;
   }
   #category-edit-select {
     width: 100% !important;
     max-width: 100% !important;
-    font-size: 1.18em !important;
+    font-size: 4.5vw !important;
     border-radius: 20px !important;
-    padding: 16px 20px !important;
-    margin: 0 auto 18px auto !important;
+    padding: 4vw 5vw !important;
+    margin: 0 auto 4vw auto !important;
     display: block !important;
   }
   #category-view button {
-    font-size: 1.1em !important;
+    font-size: 4vw !important;
     border-radius: 18px !important;
-    padding: 16px 0 8px 0 !important;
-    margin: 0 4px !important;
-    min-width: 90px !important;
-    max-width: 110px !important;
+    padding: 4vw 0 2vw 0 !important;
+    margin: 0 1vw !important;
+    min-width: 20vw !important;
+    max-width: 25vw !important;
     flex: 1 !important;
   }
   #category-view .buttons {
-    gap: 6px !important;
+    gap: 2vw !important;
     justify-content: center !important;
     width: 100% !important;
     display: flex !important;
     align-items: center !important;
-    padding: 0 8px !important;
+    padding: 0 2vw !important;
   }
   #category-title {
     font-size: 1.25em !important;
