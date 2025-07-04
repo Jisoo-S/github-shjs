@@ -64,7 +64,7 @@ function showModal(message, hasInput = false, callback = () => {}) {
     const value = hasInput ? inputEl.value.trim() : true;
     close();
     callback(value);
-  };
+    };
 
   cancelBtn.onclick = () => {
     close();

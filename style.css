@@ -750,33 +750,44 @@ li.completed span {
     background: none !important;
   }
   #category-view > div {
-    max-width: 360px !important;
+    width: 420px !important;
+    max-width: 420px !important;
+    min-width: 420px !important;
     margin: 0 auto !important;
     border-radius: 18px !important;
     padding: 24px 10px 24px 10px !important;
     background: #e5e5e5 !important;
     box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    min-height: 160px !important;
   }
   #category-edit-select {
     width: 100% !important;
-    max-width: 320px !important;
+    max-width: 100% !important;
+    font-size: 1.18em !important;
+    border-radius: 20px !important;
+    padding: 16px 20px !important;
     margin: 0 auto 18px auto !important;
     display: block !important;
-    font-size: 1.08em !important;
-    border-radius: 20px !important;
-    padding: 10px 16px !important;
   }
   #category-view button {
     font-size: 1.1em !important;
     border-radius: 18px !important;
-    padding: 18px 0 10px 0 !important;
-    margin: 0 8px !important;
-    min-width: 80px !important;
-    max-width: 120px !important;
+    padding: 16px 0 8px 0 !important;
+    margin: 0 4px !important;
+    min-width: 90px !important;
+    max-width: 110px !important;
+    flex: 1 !important;
   }
   #category-view .buttons {
-    gap: 12px !important;
+    gap: 6px !important;
     justify-content: center !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 0 8px !important;
   }
   #category-title {
     font-size: 1.25em !important;
@@ -802,22 +813,13 @@ li.completed span {
     flex-direction: column !important;
     align-items: stretch !important;
   }
-  #category-edit-select {
-    width: 100% !important;
-    max-width: 340px !important;
-    margin: 0 auto 18px auto !important;
-    display: block !important;
-    font-size: 1.08em !important;
-    border-radius: 20px !important;
-    padding: 10px 16px !important;
-  }
   #category-btns {
     display: flex !important;
     gap: 12px !important;
     width: 100% !important;
-    max-width: 340px !important;
+    max-width: 100% !important;
     margin: 0 auto !important;
-    justify-content: space-between !important;
+    justify-content: center !important;
   }
   #category-btns button {
     flex: 1 1 0 !important;

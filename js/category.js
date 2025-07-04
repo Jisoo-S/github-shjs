@@ -196,7 +196,7 @@ addCategoryBtn.addEventListener("click", () => {
     const exists = [...categorySelect.options].some(opt => opt.value === fullCategory);
     
     if (exists) {
-      showModal("이미 존재하는 카테고리입니다.", false, () => {});
+        showModal("이미 존재하는 카테고리입니다.", false, () => {});
       return;
     }
 
