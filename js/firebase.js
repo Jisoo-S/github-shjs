@@ -4,7 +4,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
 import { getFirestore, collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
 
-// Firebase 설정
+// Firebase 설정 
 const firebaseConfig = {
   apiKey: "AIzaSyADIDRqmGCI6PGofskRtVnrsTK2xHpoqEw",
   authDomain: "logintodo-ff777.firebaseapp.com",

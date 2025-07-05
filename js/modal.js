@@ -84,7 +84,7 @@ class Modal {
     this.modal = null;
     this.input = null;
   }
-
+ 
   create() {
     // 모달 오버레이 생성
     this.modal = document.createElement("div");

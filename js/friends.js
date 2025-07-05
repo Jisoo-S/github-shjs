@@ -8,7 +8,7 @@ function initializeFriendsList() {
     console.log("친구 목록 관련 요소를 찾을 수 없습니다.");
     return;
   }
-
+ 
   // 친구 추가 버튼 클릭 이벤트
   addFriendBtn.addEventListener("click", () => {
     const friendName = friendInput.value.trim();
