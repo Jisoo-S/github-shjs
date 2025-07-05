@@ -365,4 +365,4 @@ export function updateUIforAuth(user) {
     if (userEmail) userEmail.textContent = '';
     if (profileImage) profileImage.src = 'https://via.placeholder.com/100';
   }
-}
+} 
