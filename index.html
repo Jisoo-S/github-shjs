@@ -195,51 +195,25 @@
   </div>  
   
   <script>
-    const todoMain = document.querySelector(".main");
-    const calendarView = document.getElementById("calendar-view");
-    const categoryView = document.getElementById("category-view");
-    const friendsView = document.getElementById("friends-view");
-  
     const todoIcon = document.getElementById("todo-icon");
     const calendarIcon = document.getElementById("calendar-icon");
     const categoryIcon = document.getElementById("category-icon");
     const friendsIcon = document.getElementById("friends-icon");
   
-    function showView(view) {
-      // 로그인 상태 확인
-      const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-      
-      // 로그인하지 않은 경우 friends-view만 표시
-      if (!isLoggedIn) {
-        todoMain.style.display = "none";
-        calendarView.style.display = "none";
-        categoryView.style.display = "none";
-        friendsView.style.display = "block";
-        return;
-      }
-
-      // 로그인한 경우 선택된 뷰 표시
-      todoMain.style.display = view === 'todo' ? "block" : "none";
-      calendarView.style.display = view === 'calendar' ? "block" : "none";
-      categoryView.style.display = view === 'category' ? "block" : "none";
-      friendsView.style.display = view === 'friends' ? "block" : "none";
-      localStorage.setItem('lastView', view);
-    }
-  
     todoIcon.addEventListener("click", () => {
-      showView('todo');
+      if (window.showView) window.showView('todo');
     });
   
     calendarIcon.addEventListener("click", () => {
-      showView('calendar');
+      if (window.showView) window.showView('calendar');
     });
   
     categoryIcon.addEventListener("click", () => {
-      showView('category');
+      if (window.showView) window.showView('category');
     });
 
     friendsIcon.addEventListener("click", () => {
-      showView('friends');
+      if (window.showView) window.showView('friends');
     });
 
     // 페이지 로드 시 마지막 뷰 복원
@@ -247,9 +221,9 @@
       const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
       if (isLoggedIn) {
         const lastView = localStorage.getItem('lastView') || 'todo';
-        showView(lastView);
+        if (window.showView) window.showView(lastView);
       } else {
-        showView('friends');
+        if (window.showView) window.showView('friends');
       }
     });
   </script>  
@@ -361,6 +335,9 @@
     });
   </script>
   
+  <!-- 유틸리티 함수들 (다른 스크립트보다 먼저 로드) -->
+  <script src="js/utils.js"></script>
+  
   <!-- 할 일 목록 관련 기능 -->
   <script type="module" src="js/todo.js"></script>
   
@@ -371,7 +348,7 @@
   <script type="module" src="js/notes.js"></script>
   
   <!-- 카테고리 관련 기능 -->
-  <script type="module" src="js/category.js"></script>
+  <script src="js/category.js"></script>
   
   <!-- 친구 관련 기능 -->
   <script type="module" src="js/friends.js"></script>

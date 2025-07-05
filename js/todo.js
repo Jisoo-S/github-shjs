@@ -336,6 +336,8 @@ document.getElementById("todo-input").addEventListener("keyup", function (event)
 window.addTodo = addTodo;
 window.loadTodoList = loadTodoList;
 window.clearTodoListUI = clearTodoListUI;
+window.setPinButtonStyle = setPinButtonStyle;
+window.editTodo = editTodo;
 
 document.addEventListener("DOMContentLoaded", () => {
   // 모바일 햄버거 메뉴 토글

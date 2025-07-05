@@ -157,4 +157,11 @@ function deepClone(obj) {
 
 function mergeObjects(...objects) {
   return objects.reduce((result, obj) => ({ ...result, ...obj }), {});
-} 
+}
+
+// window에 유틸리티 함수들 등록 (다른 파일에서 호출 가능하도록)
+window.showModal = showModal;
+window.getToday = getToday;
+window.formatDate = formatDate;
+window.saveToLocalStorage = saveToLocalStorage;
+window.loadFromLocalStorage = loadFromLocalStorage; 

@@ -1,3 +1,51 @@
+// showModal 함수 정의 (utils.js가 로드되지 않을 경우를 대비)
+function showModal(message, hasInput = false, callback = () => {}) {
+  const overlay = document.getElementById("modal-overlay");
+  const modal = document.getElementById("custom-modal");
+  const messageEl = document.getElementById("modal-message");
+  const inputEl = document.getElementById("modal-input");
+  const confirmBtn = document.getElementById("modal-confirm");
+  const cancelBtn = document.getElementById("modal-cancel");
+
+  messageEl.innerHTML = message;
+  overlay.classList.remove("hidden");
+
+  if (hasInput) {
+    inputEl.classList.remove("hidden");
+    inputEl.value = "";
+    inputEl.focus();
+
+    inputEl.onkeydown = (e) => {
+      if (e.key === "Enter") {
+        confirmBtn.click();
+      }
+    };
+  } else {
+    inputEl.classList.add("hidden");
+  }
+
+  const close = () => {
+    overlay.classList.add("hidden");
+    confirmBtn.onclick = null;
+    cancelBtn.onclick = null;
+    inputEl.onkeydown = null;
+  };
+
+  confirmBtn.onclick = () => {
+    const value = hasInput ? inputEl.value.trim() : true;
+    close();
+    callback(value);
+  };
+
+  cancelBtn.onclick = () => {
+    close();
+    callback(null);
+  };
+}
+
+// window에 showModal 등록
+window.showModal = showModal;
+
 function handleCategoryChange() {
   const selectedCategory = document.getElementById("category-edit-select").value.trim();
   const resultArea = document.getElementById("category-todo-result");
@@ -45,10 +93,10 @@ function handleCategoryChange() {
         
         const originalPinBtn = originalLi.querySelector(".pin-btn");
         if (originalPinBtn) {
-          setPinButtonStyle(originalPinBtn, !isPinned);
+          window.setPinButtonStyle(originalPinBtn, !isPinned);
         }
 
-        setPinButtonStyle(pinBtn, !isPinned);
+        window.setPinButtonStyle(pinBtn, !isPinned);
 
         handleCategoryChange();
       });
@@ -155,12 +203,12 @@ function handleCategoryChange() {
           const refreshedEditBtn = originalButtonGroup.querySelector(".edit-btn");
           refreshedEditBtn.textContent = "✏️";
           refreshedEditBtn.addEventListener("click", () => {
-            editTodo(originalLi, originalLeft, originalSpan, originalCheckbox, updatedDate, originalButtonGroup);
+            window.editTodo(originalLi, originalLeft, originalSpan, originalCheckbox, updatedDate, originalButtonGroup);
           });
 
           refreshedEditBtn.onclick = null;
           refreshedEditBtn.addEventListener("click", () => {
-            editTodo(originalLi, originalLeft, originalSpan, originalCheckbox, updatedDate, originalButtonGroup);
+            window.editTodo(originalLi, originalLeft, originalSpan, originalCheckbox, updatedDate, originalButtonGroup);
           });
 
           handleCategoryChange();
@@ -176,103 +224,285 @@ function handleCategoryChange() {
   document.getElementById("category-view").style.display = "block";
 }
 
-// 카테고리 관련 이벤트 리스너
+// 모든 이벤트 리스너를 DOMContentLoaded 내부로 이동
 document.addEventListener("DOMContentLoaded", () => {
+  // 카테고리 필터 이벤트 리스너
   const categoryFilterSelect = document.getElementById("category-edit-select");
   if (categoryFilterSelect) {
     categoryFilterSelect.addEventListener("change", handleCategoryChange);
   }
-});
 
-const categorySelect = document.getElementById("todo-category");
-const editSelect = document.getElementById("category-edit-select");
-const addCategoryBtn = document.getElementById("add-category-btn");
+  // 카테고리 추가 버튼 이벤트 리스너
+  const addCategoryBtn = document.getElementById("add-category-btn");
+  if (addCategoryBtn) {
+    addCategoryBtn.addEventListener("click", () => {
+      const overlay = document.getElementById("modal-overlay");
+      const modal = document.getElementById("custom-modal");
+      const messageEl = document.getElementById("modal-message");
+      const inputEl = document.getElementById("modal-input");
+      const confirmBtn = document.getElementById("modal-confirm");
+      const cancelBtn = document.getElementById("modal-cancel");
 
-addCategoryBtn.addEventListener("click", () => {
-  showModal("추가할 카테고리 이름을 입력하세요", true, (value) => {
-    if (!value) return;
+      messageEl.innerHTML = "추가할 카테고리 이름을 입력하세요";
+      overlay.classList.remove("hidden");
+      inputEl.classList.remove("hidden");
+      inputEl.value = "";
+      inputEl.focus();
 
-    const fullCategory = value.trim();
-    const exists = [...categorySelect.options].some(opt => opt.value === fullCategory);
-    
-    if (exists) {
-      showModal("이미 존재하는 카테고리입니다.", false, () => {});
-      return;
-    }
+      const close = () => {
+        overlay.classList.add("hidden");
+        confirmBtn.onclick = null;
+        cancelBtn.onclick = null;
+        inputEl.onkeydown = null;
+      };
 
-    const newOption1 = new Option(fullCategory, fullCategory);
-    const newOption2 = new Option(fullCategory, fullCategory);
-    categorySelect.add(newOption1);
-    editSelect.add(newOption2);
-  });
-});
+      inputEl.onkeydown = (e) => {
+        if (e.key === "Enter") {
+          confirmBtn.click();
+        }
+      };
 
-const deleteCategoryBtn = document.getElementById("delete-category-btn");
+      confirmBtn.onclick = () => {
+        const value = inputEl.value.trim();
+        close();
+        
+        if (!value) return;
 
-deleteCategoryBtn.addEventListener("click", () => {
-  const selected = editSelect.value;
-  if (!selected) {
-    showModal("삭제할 카테고리를 선택하세요.", false, () => {});
-    return;
+        const categorySelect = document.getElementById("todo-category");
+        const editSelect = document.getElementById("category-edit-select");
+        const fullCategory = value;
+        const exists = [...categorySelect.options].some(opt => opt.value === fullCategory);
+        
+        if (exists) {
+          // 이미 존재하는 카테고리 알림
+          messageEl.innerHTML = "이미 존재하는 카테고리입니다.";
+          overlay.classList.remove("hidden");
+          inputEl.classList.add("hidden");
+          
+          const closeAlert = () => {
+            overlay.classList.add("hidden");
+            confirmBtn.onclick = null;
+            cancelBtn.onclick = null;
+          };
+          
+          confirmBtn.onclick = closeAlert;
+          cancelBtn.onclick = closeAlert;
+          return;
+        }
+
+        const newOption1 = new Option(fullCategory, fullCategory);
+        const newOption2 = new Option(fullCategory, fullCategory);
+        categorySelect.add(newOption1);
+        editSelect.add(newOption2);
+      };
+
+      cancelBtn.onclick = () => {
+        close();
+      };
+    });
   }
 
-  showModal(`'${selected}'<br> 카테고리를 정말 삭제할까요?`, false, (confirm) => {
-    if (!confirm) return;
+  // 카테고리 삭제 버튼 이벤트 리스너
+  const deleteCategoryBtn = document.getElementById("delete-category-btn");
+  if (deleteCategoryBtn) {
+    deleteCategoryBtn.addEventListener("click", () => {
+      const editSelect = document.getElementById("category-edit-select");
+      const selected = editSelect.value;
+      if (!selected) {
+        const overlay = document.getElementById("modal-overlay");
+        const messageEl = document.getElementById("modal-message");
+        const inputEl = document.getElementById("modal-input");
+        const confirmBtn = document.getElementById("modal-confirm");
+        const cancelBtn = document.getElementById("modal-cancel");
 
-    [...editSelect.options].forEach((opt, i) => {
-      if (opt.value === selected) editSelect.remove(i);
-    });
-    [...categorySelect.options].forEach((opt, i) => {
-      if (opt.value === selected) categorySelect.remove(i);
-    });
+        messageEl.innerHTML = "삭제할 카테고리를 선택하세요.";
+        overlay.classList.remove("hidden");
+        inputEl.classList.add("hidden");
 
-    const allTodos = document.querySelectorAll("#todo-list li");
-    allTodos.forEach(li => {
-      if (li.dataset.category === selected) {
-        li.dataset.category = "";
-        const catSpan = [...li.querySelectorAll("span")].find(span =>
-          span.textContent === selected
-        );
-        if (catSpan) catSpan.remove();
+        const close = () => {
+          overlay.classList.add("hidden");
+          confirmBtn.onclick = null;
+          cancelBtn.onclick = null;
+        };
+
+        confirmBtn.onclick = close;
+        cancelBtn.onclick = close;
+        return;
       }
+
+      const overlay = document.getElementById("modal-overlay");
+      const messageEl = document.getElementById("modal-message");
+      const inputEl = document.getElementById("modal-input");
+      const confirmBtn = document.getElementById("modal-confirm");
+      const cancelBtn = document.getElementById("modal-cancel");
+
+      messageEl.innerHTML = `'${selected}'<br> 카테고리를 정말 삭제할까요?`;
+      overlay.classList.remove("hidden");
+      inputEl.classList.add("hidden");
+
+      const close = () => {
+        overlay.classList.add("hidden");
+        confirmBtn.onclick = null;
+        cancelBtn.onclick = null;
+      };
+
+      confirmBtn.onclick = () => {
+        close();
+
+        const categorySelect = document.getElementById("todo-category");
+        const editSelect = document.getElementById("category-edit-select");
+
+        [...editSelect.options].forEach((opt, i) => {
+          if (opt.value === selected) editSelect.remove(i);
+        });
+        [...categorySelect.options].forEach((opt, i) => {
+          if (opt.value === selected) categorySelect.remove(i);
+        });
+
+        const allTodos = document.querySelectorAll("#todo-list li");
+        allTodos.forEach(li => {
+          if (li.dataset.category === selected) {
+            li.dataset.category = "";
+            const catSpan = [...li.querySelectorAll("span")].find(span =>
+              span.textContent === selected
+            );
+            if (catSpan) catSpan.remove();
+          }
+        });
+
+        // 삭제 완료 알림
+        messageEl.innerHTML = `'${selected}'<br>카테고리가 삭제되었습니다.`;
+        overlay.classList.remove("hidden");
+        inputEl.classList.add("hidden");
+
+        const closeAlert = () => {
+          overlay.classList.add("hidden");
+          confirmBtn.onclick = null;
+          cancelBtn.onclick = null;
+        };
+
+        confirmBtn.onclick = closeAlert;
+        cancelBtn.onclick = closeAlert;
+      };
+
+      cancelBtn.onclick = close;
     });
-
-    showModal(`'${selected}'<br>카테고리가 삭제되었습니다.`, false, () => {});
-  });
-});
-
-const editCategoryBtn = document.getElementById("edit-category-btn");
-
-editCategoryBtn.addEventListener("click", () => {
-  const selected = editSelect.value;
-  if (!selected) {
-    showModal("수정할 카테고리를 선택하세요.", false, () => {});
-    return;
   }
 
-  showModal("카테고리의 새로운 이름을 작성해주세요.", true, (newName) => {
-    if (!newName) return;
-    const exists = [...categorySelect.options].some(opt => opt.value === newName);
-    if (exists) {
-      showModal("이미 존재하는 카테고리입니다.", false, () => {});
-      return;
-    }
-    // select option 값 변경
-    [...editSelect.options].forEach(opt => {
-      if (opt.value === selected) opt.text = opt.value = newName;
-    });
-    [...categorySelect.options].forEach(opt => {
-      if (opt.value === selected) opt.text = opt.value = newName;
-    });
-    // 기존 할 일의 카테고리 값도 변경
-    const allTodos = document.querySelectorAll("#todo-list li");
-    allTodos.forEach(li => {
-      if (li.dataset.category === selected) {
-        li.dataset.category = newName;
-        const catSpan = [...li.querySelectorAll("span")].find(span => span.textContent === selected);
-        if (catSpan) catSpan.textContent = newName;
+  // 카테고리 수정 버튼 이벤트 리스너
+  const editCategoryBtn = document.getElementById("edit-category-btn");
+  if (editCategoryBtn) {
+    editCategoryBtn.addEventListener("click", () => {
+      const editSelect = document.getElementById("category-edit-select");
+      const selected = editSelect.value;
+      if (!selected) {
+        const overlay = document.getElementById("modal-overlay");
+        const messageEl = document.getElementById("modal-message");
+        const inputEl = document.getElementById("modal-input");
+        const confirmBtn = document.getElementById("modal-confirm");
+        const cancelBtn = document.getElementById("modal-cancel");
+
+        messageEl.innerHTML = "수정할 카테고리를 선택하세요.";
+        overlay.classList.remove("hidden");
+        inputEl.classList.add("hidden");
+
+        const close = () => {
+          overlay.classList.add("hidden");
+          confirmBtn.onclick = null;
+          cancelBtn.onclick = null;
+        };
+
+        confirmBtn.onclick = close;
+        cancelBtn.onclick = close;
+        return;
       }
+
+      const overlay = document.getElementById("modal-overlay");
+      const messageEl = document.getElementById("modal-message");
+      const inputEl = document.getElementById("modal-input");
+      const confirmBtn = document.getElementById("modal-confirm");
+      const cancelBtn = document.getElementById("modal-cancel");
+
+      messageEl.innerHTML = "카테고리의 새로운 이름을 작성해주세요.";
+      overlay.classList.remove("hidden");
+      inputEl.classList.remove("hidden");
+      inputEl.value = "";
+      inputEl.focus();
+
+      const close = () => {
+        overlay.classList.add("hidden");
+        confirmBtn.onclick = null;
+        cancelBtn.onclick = null;
+        inputEl.onkeydown = null;
+      };
+
+      inputEl.onkeydown = (e) => {
+        if (e.key === "Enter") {
+          confirmBtn.click();
+        }
+      };
+
+      confirmBtn.onclick = () => {
+        const newName = inputEl.value.trim();
+        close();
+        
+        if (!newName) return;
+        
+        const categorySelect = document.getElementById("todo-category");
+        const editSelect = document.getElementById("category-edit-select");
+        const exists = [...categorySelect.options].some(opt => opt.value === newName);
+        if (exists) {
+          // 이미 존재하는 카테고리 알림
+          messageEl.innerHTML = "이미 존재하는 카테고리입니다.";
+          overlay.classList.remove("hidden");
+          inputEl.classList.add("hidden");
+          
+          const closeAlert = () => {
+            overlay.classList.add("hidden");
+            confirmBtn.onclick = null;
+            cancelBtn.onclick = null;
+          };
+          
+          confirmBtn.onclick = closeAlert;
+          cancelBtn.onclick = closeAlert;
+          return;
+        }
+        
+        // select option 값 변경
+        [...editSelect.options].forEach(opt => {
+          if (opt.value === selected) opt.text = opt.value = newName;
+        });
+        [...categorySelect.options].forEach(opt => {
+          if (opt.value === selected) opt.text = opt.value = newName;
+        });
+        // 기존 할 일의 카테고리 값도 변경
+        const allTodos = document.querySelectorAll("#todo-list li");
+        allTodos.forEach(li => {
+          if (li.dataset.category === selected) {
+            li.dataset.category = newName;
+            const catSpan = [...li.querySelectorAll("span")].find(span => span.textContent === selected);
+            if (catSpan) catSpan.textContent = newName;
+          }
+        });
+        
+        // 수정 완료 알림
+        messageEl.innerHTML = "카테고리 이름이 수정되었습니다.";
+        overlay.classList.remove("hidden");
+        inputEl.classList.add("hidden");
+
+        const closeAlert = () => {
+          overlay.classList.add("hidden");
+          confirmBtn.onclick = null;
+          cancelBtn.onclick = null;
+        };
+
+        confirmBtn.onclick = closeAlert;
+        cancelBtn.onclick = closeAlert;
+      };
+
+      cancelBtn.onclick = close;
     });
-    showModal("카테고리 이름이 수정되었습니다.", false, () => {});
-  });
-}); 
+  }
+});
+
+window.handleCategoryChange = handleCategoryChange; 

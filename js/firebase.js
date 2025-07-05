@@ -39,6 +39,19 @@ const sidebar = document.querySelector(".sidebar");
 
 // 뷰 전환 함수
 export function showView(view) {
+  // 로그인 상태 확인
+  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+  
+  // 로그인하지 않은 경우 friends-view만 표시
+  if (!isLoggedIn) {
+    if (todoMain) todoMain.style.display = "none";
+    if (calendarView) calendarView.style.display = "none";
+    if (categoryView) categoryView.style.display = "none";
+    if (friendsView) friendsView.style.display = "block";
+    return;
+  }
+
+  // 로그인한 경우 선택된 뷰 표시
   if (todoMain) todoMain.style.display = view === 'todo' ? "block" : "none";
   if (calendarView) calendarView.style.display = view === 'calendar' ? "block" : "none";
   if (categoryView) categoryView.style.display = view === 'category' ? "block" : "none";
@@ -49,6 +62,13 @@ export function showView(view) {
   if (view === 'calendar') {
     if (typeof window.initializeCalendar === 'function') {
       window.initializeCalendar();
+    }
+  }
+
+  // 카테고리 뷰일 때 카테고리별 할 일 목록 초기화
+  if (view === 'category') {
+    if (typeof window.handleCategoryChange === 'function') {
+      window.handleCategoryChange();
     }
   }
 }
@@ -365,4 +385,10 @@ export function updateUIforAuth(user) {
     if (userEmail) userEmail.textContent = '';
     if (profileImage) profileImage.src = 'https://via.placeholder.com/100';
   }
-} 
+}
+
+// window에 함수들 등록 (다른 파일에서 호출 가능하도록)
+window.showView = showView;
+window.login = login;
+window.signup = signup;
+window.logout = logout; 
