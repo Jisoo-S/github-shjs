@@ -1036,3 +1036,48 @@ li.completed span {
     /* 최근 추가된 padding-left 삭제 */
   }
 }
+
+@media (max-width: 600px) {
+  #category-view > div {
+    width: 98vw !important;
+    max-width: 100vw !important;
+    min-width: 0 !important;
+    margin: 0 auto !important;
+    border-radius: 14px !important;
+    padding: 4vw 2vw 4vw 2vw !important;
+    background: #e5e5e5 !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    min-height: 20vh !important;
+  }
+  #category-edit-select {
+    width: 100% !important;
+    max-width: 100% !important;
+    font-size: 4vw !important;
+    border-radius: 16px !important;
+    padding: 3vw 4vw !important;
+    margin: 0 auto 3vw auto !important;
+    display: block !important;
+  }
+  #category-view button {
+    font-size: 3.5vw !important;
+    border-radius: 14px !important;
+    padding: 3vw 0 2vw 0 !important;
+    margin: 0 1vw 2vw 1vw !important;
+    min-width: 18vw !important;
+    max-width: 30vw !important;
+    flex: 1 1 0 !important;
+    box-sizing: border-box !important;
+  }
+  #category-view .buttons, #category-view > div > div {
+    gap: 2vw !important;
+    justify-content: center !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    padding: 0 2vw !important;
+  }
+}
