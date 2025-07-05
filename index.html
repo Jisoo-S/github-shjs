@@ -199,23 +199,40 @@
     const calendarIcon = document.getElementById("calendar-icon");
     const categoryIcon = document.getElementById("category-icon");
     const friendsIcon = document.getElementById("friends-icon");
-  
+    const subtitle = document.querySelector('.subtitle');
+    const userEmailEl = document.getElementById('user-email');
+
+    function updateSubtitle() {
+      let email = '';
+      if (userEmailEl && userEmailEl.textContent) {
+        email = userEmailEl.textContent.trim();
+      }
+      if (email) {
+        subtitle.innerHTML = `Welcome, <b>${email}</b>`;
+      } else {
+        subtitle.textContent = 'Click the 👍 button to log in.';
+      }
+    }
+
+    // 로그인/로그아웃 시에도 subtitle 갱신
+    document.addEventListener('DOMContentLoaded', updateSubtitle);
+    if (userEmailEl) {
+      const observer = new MutationObserver(updateSubtitle);
+      observer.observe(userEmailEl, { childList: true, subtree: true, characterData: true });
+    }
+
     todoIcon.addEventListener("click", () => {
       if (window.showView) window.showView('todo');
     });
-  
     calendarIcon.addEventListener("click", () => {
       if (window.showView) window.showView('calendar');
     });
-  
     categoryIcon.addEventListener("click", () => {
       if (window.showView) window.showView('category');
     });
-
     friendsIcon.addEventListener("click", () => {
       if (window.showView) window.showView('friends');
     });
-
     // 페이지 로드 시 마지막 뷰 복원
     document.addEventListener('DOMContentLoaded', () => {
       const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';

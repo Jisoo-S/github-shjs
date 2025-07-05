@@ -75,8 +75,9 @@ body {
 }
 
 .header-card .subtitle {
-  font-size: 14px;
-  opacity: 0.7;
+  font-size: 13px;
+  opacity: 1;
+  color: #eab5e9;
 }
 
 .buttons {
@@ -336,12 +337,34 @@ li.completed span {
 
 @media (max-width: 600px) {
   #login-form {
-    width: 100% !important;
-    max-width: 100% !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
+    position: absolute !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 90% !important;
+    max-width: 320px !important;
+    border-radius: 20px !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+    padding: 30px 20px !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+    border: 1px solid rgba(255, 224, 138, 0.3) !important;
     margin: 0 !important;
-    padding: 24px 12px !important;
+  }
+  #login-form button {
+    background: #ffe08a !important;
+    color: black !important;
+    font-weight: bold !important;
+    box-shadow: none !important;
+    transition: background-color 0.3s ease !important;
+  }
+  #login-form button:hover {
+    background-color: #ffd700 !important;
+    color: black !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+  #login-form button:active {
+    transform: none !important;
   }
 }
 
@@ -1079,5 +1102,18 @@ li.completed span {
     align-items: center !important;
     flex-wrap: wrap !important;
     padding: 0 2vw !important;
+  }
+}
+
+/* 버튼 그룹 간격 개선 (PC/태블릿 포함) */
+.button-group, .modal-buttons, #calendar-control, #login-form > div {
+  gap: 16px !important;
+}
+
+/* 모바일 로그인 회원가입 버튼만 회색 */
+@media (max-width: 600px) {
+  #login-form button:last-child {
+    background: #ddd !important;
+    color: #222 !important;
   }
 }
