@@ -2,6 +2,7 @@
 import { getCurrentUser, addTodoToFirebase, getTodosFromFirebase, updateTodoInFirebase, deleteTodoFromFirebase } from './firebase.js';
 
 let todos = []; // 할 일 목록을 저장할 배열
+let showCompleted = true;
 
 // UI를 업데이트하는 함수
 function updateTodoList() {
@@ -125,16 +126,25 @@ function renderTodos() {
   const list = document.getElementById("todo-list");
   list.innerHTML = "";
 
-  const itemsToRender = [...todos];
+  // 필터링: showCompleted가 false면 완료된 항목 제외
+  let itemsToRender = [...todos];
+  if (!showCompleted) {
+    itemsToRender = itemsToRender.filter(todo => !todo.completed);
+  }
 
+  // 완료된 항목은 항상 아래로 정렬
   itemsToRender.sort((a, b) => {
+    // 1. 완료 여부(미완료 먼저)
+    if (a.completed !== b.completed) {
+      return a.completed - b.completed; // false(0) - true(1) → 미완료가 위
+    }
+    // 2. 고정 여부(핀)
     const pinnedA = a.pinned;
     const pinnedB = b.pinned;
-
     if (pinnedA !== pinnedB) {
       return pinnedB - pinnedA;
     }
-
+    // 3. 날짜
     const dateA = a.date || "";
     const dateB = b.date || "";
     return dateA.localeCompare(dateB);
@@ -357,5 +367,18 @@ document.addEventListener("DOMContentLoaded", () => {
         sidebar.classList.remove("sidebar--mobile-open");
       }
     });
+  }
+
+  const showBtn = document.getElementById('toggle-show');
+  const hideBtn = document.getElementById('toggle-hide');
+  if (showBtn && hideBtn) {
+    showBtn.onclick = () => {
+      showCompleted = true;
+      updateTodoList();
+    };
+    hideBtn.onclick = () => {
+      showCompleted = false;
+      updateTodoList();
+    };
   }
 }); 
