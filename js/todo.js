@@ -31,113 +31,34 @@ export async function addTodo() {
 
   if (!value) return;
 
-  const list = document.getElementById("todo-list");
-  list.style.display = "block";
+  const newTodo = {
+    text: value,
+    date: dateValue,
+    category: categoryValue,
+    completed: false,
+    pinned: false,
+    createdAt: new Date().toISOString() // 생성 시간 추가
+  };
 
-  const li = document.createElement("li");
-  li.dataset.category = categoryValue;
-  li.dataset.date = dateValue;
-
-  const left = document.createElement("div");
-  left.className = "todo-left";
-
-  const checkbox = document.createElement("input");
-  checkbox.type = "checkbox";
-  checkbox.addEventListener("change", () => {
-    li.classList.toggle("completed");
-    renderList();
-    saveTodoList();
-  });
-
-  const pinBtn = document.createElement("button");
-  pinBtn.textContent = "📌";
-  pinBtn.classList.add("pin-btn");
-  setPinButtonStyle(pinBtn, false);
-
-  pinBtn.addEventListener("click", () => {
-    const isPinned = li.dataset.pinned === "true";
-    li.dataset.pinned = isPinned ? "false" : "true";
-    setPinButtonStyle(pinBtn, !isPinned);
-    renderList();
-  });
-
-  const initiallyPinned = li.dataset.pinned === "true";
-  pinBtn.classList.add(initiallyPinned ? "pin-active" : "pin-inactive");
-
-  if (li.dataset.pinned === "true") {
-    pinBtn.style.opacity = "1";
-    pinBtn.style.backgroundColor = "#ffe08a";
-    pinBtn.style.borderRadius = "8px";
-    pinBtn.style.padding = "2px 4px";
-  } else {
-    pinBtn.style.opacity = "0.5";
-  }
-
-  const span = document.createElement("span");
-  span.textContent = value;
-  left.appendChild(checkbox);
-  left.appendChild(span);
-
-  const dateSpan = document.createElement("span");
-  dateSpan.textContent = `📅 ${dateValue}`;
-  dateSpan.style.fontSize = "12px";
-  dateSpan.style.marginLeft = "10px";
-  dateSpan.style.opacity = "0.6";
-  left.appendChild(dateSpan);
-
-  if (categoryValue) {
-    const categorySpan = document.createElement("span");
-    categorySpan.textContent = categoryValue;
-    categorySpan.style.fontSize = "12px";
-    categorySpan.style.marginLeft = "10px";
-    categorySpan.style.opacity = "0.8";
-    categorySpan.style.backgroundColor = "#eee";
-    categorySpan.style.padding = "2px 6px";
-    categorySpan.style.borderRadius = "8px";
-    left.appendChild(categorySpan);
-  }
-
-  const editBtn = document.createElement("button");
-  editBtn.textContent = "✏️";
-  editBtn.classList.add("edit-btn");
-  editBtn.style.border = "none";
-  editBtn.style.background = "none";
-  editBtn.style.cursor = "pointer";
-
-  const deleteBtn = document.createElement("button");
-  deleteBtn.textContent = "🗑️";
-  deleteBtn.classList.add("delete-btn");
-  deleteBtn.style.border = "none";
-  deleteBtn.style.background = "none";
-  deleteBtn.style.cursor = "pointer";
-  deleteBtn.addEventListener("click", () => {
-    const date = li.dataset.date;
-    li.remove();
-    saveTodoList();
-    
-    // 달력 뷰가 표시 중이면 즉시 업데이트
-    if (document.getElementById("calendar-view").style.display === "block") {
-      updateCalendarCell(new Date(date));
+  try {
+    // Firebase에 저장하고 ID를 할당받음
+    const user = getCurrentUser();
+    if (!user) {
+      alert("로그인해야 할 일을 추가할 수 있습니다.");
+      return;
     }
-  });
-
-  const buttonGroup = document.createElement("div");
-  buttonGroup.className = "button-group";
-  buttonGroup.appendChild(pinBtn);
-  buttonGroup.appendChild(editBtn);
-  buttonGroup.appendChild(deleteBtn);
-
-  editBtn.addEventListener("click", () => {
-    editTodo(li, left, span, checkbox, dateValue, categoryValue, buttonGroup);
-  });
-
-  li.appendChild(left);
-  li.appendChild(buttonGroup);
-  list.appendChild(li);
-
-  input.value = "";
-  dateInput.value = "";
-  categorySelect.value = "";
+    
+    // Firestore에서는 addDoc을 사용하면 자동 ID가 생성됩니다.
+    const docRef = await addTodoToFirebase(newTodo); // addTodoToFirebase 호출
+    todos.push({ id: docRef.id, ...newTodo }); // 할 일 배열에 추가
+    updateTodoList(); // UI 업데이트
+    input.value = "";
+    dateInput.value = "";
+    categorySelect.value = "";
+  } catch (error) {
+    console.error("할 일 추가 실패:", error);
+    alert("할 일 추가에 실패했습니다.");
+  }
 }
 
 async function deleteTodo(id) {
@@ -202,20 +123,38 @@ export function clearTodoListUI() {
 
 function renderTodos() {
   const list = document.getElementById("todo-list");
+  list.innerHTML = "";
 
-  const li = document.createElement("li");
-  li.dataset.category = categoryValue;
-  li.dataset.date = dateValue;
+  const itemsToRender = [...todos];
+
+  itemsToRender.sort((a, b) => {
+    const pinnedA = a.pinned;
+    const pinnedB = b.pinned;
+
+    if (pinnedA !== pinnedB) {
+      return pinnedB - pinnedA;
+    }
+
+    const dateA = a.date || "";
+    const dateB = b.date || "";
+    return dateA.localeCompare(dateB);
+  });
+
+  itemsToRender.forEach(todo => {
+    const li = document.createElement("li");
+    li.dataset.category = todo.category;
+    li.dataset.date = todo.date;
+    li.dataset.pinned = todo.pinned;
 
     const left = document.createElement("div");
     left.className = "todo-left";
 
-  const checkbox = document.createElement("input");
-  checkbox.type = "checkbox";
-  checkbox.addEventListener("change", () => {
-    li.classList.toggle("completed");
-    saveTodoList();
-  });
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = todo.completed;
+    checkbox.addEventListener("change", () => {
+      toggleTodo(todo.id);
+    });
 
     const pinBtn = document.createElement("button");
     pinBtn.textContent = "📌";
@@ -292,25 +231,14 @@ function renderTodos() {
 
   // 달력 뷰가 표시 중이면 달력 업데이트
   if (document.getElementById("calendar-view").style.display === "block") {
-    updateCalendarCell(new Date(dateValue));
+    if (typeof calendarMode !== 'undefined' && calendarMode === "month") {
+      showMonthView();
+    } else if (typeof calendarMode !== 'undefined' && calendarMode === "week") {
+      showWeekView();
+    } else if (typeof calendarMode !== 'undefined' && calendarMode === "today") {
+      showTodayView();
+    }
   }
-}
-
-function renderList() {
-  const list = document.getElementById("todo-list");
-  const items = Array.from(list.children);
-
-  items.sort((a, b) => {
-    const aCompleted = a.classList.contains("completed");
-    const bCompleted = b.classList.contains("completed");
-    if (aCompleted !== bCompleted) return aCompleted ? 1 : -1;
-    // 같은 상태면 날짜 비교
-    const aDate = a.dataset.date || "9999-12-31";
-    const bDate = b.dataset.date || "9999-12-31";
-    return aDate.localeCompare(bDate);
-  });
-
-  items.forEach(item => list.appendChild(item));
 }
 
 function setPinButtonStyle(btn, isPinned) {
@@ -340,7 +268,7 @@ function editTodo(li, left, span, checkbox, oldDate, oldCategory, buttonGroup, t
   newDateInput.type = "date";
   newDateInput.value = oldDate;
   newDateInput.style.fontSize = "14px";
-  newInput.style.padding = "8px";
+  newDateInput.style.padding = "8px";
   newDateInput.style.borderRadius = "10px";
   newDateInput.style.border = "1px solid #ccc";
 
@@ -428,30 +356,4 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
-});
-
-const todoList = document.getElementById("todo-list");
-const hideBtn = document.getElementById("toggle-hide");
-const showBtn = document.getElementById("toggle-show");
-
-// 두 버튼 모두 항상 보이게
-hideBtn.style.display = "inline-block";
-showBtn.style.display = "inline-block";
-
-hideBtn.addEventListener("click", () => {
-  const todoItems = document.querySelectorAll("#todo-list li");
-  todoItems.forEach(li => {
-    if (li.classList.contains("completed")) {
-      li.style.display = "none";
-    }
-  });
-});
-
-showBtn.addEventListener("click", () => {
-  const todoItems = document.querySelectorAll("#todo-list li");
-  todoItems.forEach(li => {
-    if (li.classList.contains("completed")) {
-      li.style.display = "";
-    }
-  });
 }); 
