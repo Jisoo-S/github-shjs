@@ -791,33 +791,69 @@ li.completed span {
     background: none !important;
   }
   #category-view > div {
-    max-width: 360px !important;
+    width: 88vw !important;
+    max-width: 92vw !important;
+    min-width: 0 !important;
     margin: 0 auto !important;
-    border-radius: 18px !important;
-    padding: 24px 10px 24px 10px !important;
+    border-radius: 12px !important;
+    padding: 3vw 2vw 3vw 2vw !important;
     background: #e5e5e5 !important;
     box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    min-height: 10vh !important;
+  }
+  #category-view > div > div {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 3vw !important;
+    margin-top: 2vw !important;
+    margin-bottom: 1vw !important;
+    flex-wrap: wrap !important;
+    padding: 0 !important;
+  }
+  #category-view button {
+    min-width: 18vw !important;
+    max-width: 20vw !important;
+    min-height: 18vw !important;
+    max-height: 20vw !important;
+    padding: 0 !important;
+    aspect-ratio: 1/1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
   #category-edit-select {
     width: 100% !important;
-    max-width: 320px !important;
-    margin: 0 auto 18px auto !important;
+    max-width: 100% !important;
+    font-size: 4vw !important;
+    border-radius: 16px !important;
+    padding: 3vw 4vw !important;
+    margin: 0 auto 3vw auto !important;
     display: block !important;
-    font-size: 1.08em !important;
-    border-radius: 20px !important;
-    padding: 10px 16px !important;
   }
   #category-view button {
-    font-size: 1.1em !important;
-    border-radius: 18px !important;
-    padding: 18px 0 10px 0 !important;
-    margin: 0 8px !important;
-    min-width: 80px !important;
-    max-width: 120px !important;
+    font-size: 3.5vw !important;
+    border-radius: 14px !important;
+    padding: 3vw 0 2vw 0 !important;
+    margin: 0 1vw 2vw 1vw !important;
+    min-width: 18vw !important;
+    max-width: 30vw !important;
+    flex: 1 1 0 !important;
+    box-sizing: border-box !important;
   }
-  #category-view .buttons {
-    gap: 12px !important;
+  #category-view .buttons, #category-view > div > div {
+    gap: 2vw !important;
     justify-content: center !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    padding: 0 2vw !important;
   }
   #category-title {
     font-size: 1.25em !important;
@@ -1058,50 +1094,63 @@ li.completed span {
   .main {
     /* 최근 추가된 padding-left 삭제 */
   }
+  #add-todo-btn {
+    font-size: 1em;
+    padding: 7px 14px;
+    border-radius: 8px;
+    min-width: 48px;
+    min-height: 28px;
+    background: #ffe08a;
+    color: #222;
+    font-weight: bold;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #add-todo-btn:hover {
+    background: #ffd700;
+  }
 }
 
 @media (max-width: 600px) {
   #category-view > div {
-    width: 98vw !important;
-    max-width: 100vw !important;
+    width: 88vw !important;
+    max-width: 92vw !important;
     min-width: 0 !important;
     margin: 0 auto !important;
-    border-radius: 14px !important;
-    padding: 4vw 2vw 4vw 2vw !important;
+    border-radius: 12px !important;
+    padding: 3vw 2vw 3vw 2vw !important;
     background: #e5e5e5 !important;
     box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
-    align-items: stretch !important;
-    min-height: 20vh !important;
+    align-items: center !important;
+    min-height: 10vh !important;
   }
-  #category-edit-select {
-    width: 100% !important;
-    max-width: 100% !important;
-    font-size: 4vw !important;
-    border-radius: 16px !important;
-    padding: 3vw 4vw !important;
-    margin: 0 auto 3vw auto !important;
-    display: block !important;
-  }
-  #category-view button {
-    font-size: 3.5vw !important;
-    border-radius: 14px !important;
-    padding: 3vw 0 2vw 0 !important;
-    margin: 0 1vw 2vw 1vw !important;
-    min-width: 18vw !important;
-    max-width: 30vw !important;
-    flex: 1 1 0 !important;
-    box-sizing: border-box !important;
-  }
-  #category-view .buttons, #category-view > div > div {
-    gap: 2vw !important;
-    justify-content: center !important;
+  #category-view > div > div {
     width: 100% !important;
     display: flex !important;
+    justify-content: center !important;
     align-items: center !important;
+    gap: 3vw !important;
+    margin-top: 2vw !important;
+    margin-bottom: 1vw !important;
     flex-wrap: wrap !important;
-    padding: 0 2vw !important;
+    padding: 0 !important;
+  }
+  #category-view button {
+    min-width: 18vw !important;
+    max-width: 20vw !important;
+    min-height: 18vw !important;
+    max-height: 20vw !important;
+    padding: 0 !important;
+    aspect-ratio: 1/1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 }
 
