@@ -41,21 +41,26 @@ const sidebar = document.querySelector(".sidebar");
 export function showView(view) {
   // 로그인 상태 확인
   const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-  
-  // 로그인하지 않은 경우 friends-view만 표시
+  // 모든 뷰 숨기기
+  if (todoMain) todoMain.style.display = "none";
+  if (calendarView) calendarView.style.display = "none";
+  if (categoryView) categoryView.style.display = "none";
+  if (friendsView) friendsView.style.display = "none";
+  const plusView = document.getElementById('plus-view');
+  if (plusView) plusView.style.display = "none";
+
+  // 로그인하지 않은 경우 plus-view만 표시
   if (!isLoggedIn) {
-    if (todoMain) todoMain.style.display = "none";
-    if (calendarView) calendarView.style.display = "none";
-    if (categoryView) categoryView.style.display = "none";
-    if (friendsView) friendsView.style.display = "block";
+    if (plusView) plusView.style.display = "block";
     return;
   }
 
   // 로그인한 경우 선택된 뷰 표시
-  if (todoMain) todoMain.style.display = view === 'todo' ? "block" : "none";
-  if (calendarView) calendarView.style.display = view === 'calendar' ? "block" : "none";
-  if (categoryView) categoryView.style.display = view === 'category' ? "block" : "none";
-  if (friendsView) friendsView.style.display = view === 'friends' ? "block" : "none";
+  if (view === 'todo' && todoMain) todoMain.style.display = "block";
+  if (view === 'calendar' && calendarView) calendarView.style.display = "block";
+  if (view === 'category' && categoryView) categoryView.style.display = "block";
+  if (view === 'friends' && friendsView) friendsView.style.display = "block";
+  if (view === 'plus' && plusView) plusView.style.display = "block";
   localStorage.setItem('lastView', view);
 
   // 캘린더 뷰일 때 캘린더 초기화 (initializeCalendar 함수가 전역에 노출되어 있어야 합니다)
