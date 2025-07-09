@@ -81,19 +81,21 @@ async function acceptFriendRequest(requesterUid) {
   const requesterData = requesterDoc.data() || {};
   const requesterName = requesterData.name || "이름없음";
   const requesterProfile = requesterData.profileImageUrl || "https://via.placeholder.com/40";
+  const requesterEmail = requesterData.email || requesterDoc.id || "unknown";
   // 내 정보
   const myName = user.displayName || "이름없음";
   const myProfile = user.photoURL || "https://via.placeholder.com/40";
+  const myEmail = user.email || user.uid || "unknown";
   // 1. 내 친구목록에 추가 (모든 정보 포함)
   await setDoc(doc(db, "users", user.uid, "friends", requesterUid), {
-    email: requesterData.email,
+    email: requesterEmail,
     name: requesterName,
     profileImageUrl: requesterProfile,
     uid: requesterUid
   });
   // 2. 상대방 친구목록에도 나 추가 (모든 정보 포함)
   await setDoc(doc(db, "users", requesterUid, "friends", user.uid), {
-    email: user.email,
+    email: myEmail,
     name: myName,
     profileImageUrl: myProfile,
     uid: user.uid
@@ -131,6 +133,7 @@ export async function removeFriend(friendUid) {
   await deleteDoc(doc(db, "users", friendUid, "friends", user.uid));
 }
 window.removeFriend = removeFriend;
+window.acceptFriendRequest = acceptFriendRequest;
 
 export function initializeFriendsList() {
   // user-info 영역 내에서만 탐색하도록 root 지정
