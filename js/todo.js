@@ -367,6 +367,20 @@ document.addEventListener("DOMContentLoaded", () => {
         sidebar.classList.remove("sidebar--mobile-open");
       }
     });
+    // ⭐, 📅, 🏷️, 👍, + 메뉴 클릭 시 사이드바 닫기
+    [
+      document.getElementById("todo-icon"),
+      document.getElementById("calendar-icon"),
+      document.getElementById("category-icon"),
+      document.getElementById("friends-icon"),
+      document.querySelector(".sidebar button")
+    ].forEach(btn => {
+      if (btn) {
+        btn.addEventListener("click", () => {
+          sidebar.classList.remove("sidebar--mobile-open");
+        });
+      }
+    });
   }
 
   const showBtn = document.getElementById('toggle-show');
