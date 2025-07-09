@@ -154,11 +154,9 @@
     </div>
     <!-- 사용자 정보 및 친구 목록 -->
     <div id="user-info" style="margin-top: 20px; display: none;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div style="display: flex; align-items: center; gap: 32px; margin-bottom: 20px;">
         <h3 id="user-email" style="margin: 0;"></h3>
-        <button onclick="logout()" style="padding: 8px 20px; border-radius: 20px; border: none; background: #ff9f9f; color: white; cursor: pointer;">
-          로그아웃
-        </button>
+        <button onclick="logout()" style="padding: 8px 20px; border-radius: 20px; border: none; background: #ff9f9f; color: white; cursor: pointer;">로그아웃</button>
       </div>
       <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 10px;">
         <div class="profile-circle" style="position: relative; display: inline-block;">
@@ -178,10 +176,20 @@
         <div style="display: flex; gap: 8px; margin-bottom: 15px; justify-content: flex-start; align-items: center;">
           <input id="friend-input" type="text" placeholder="친구 이메일 입력" style="width: 120px; max-width: 200px; padding: 6px 10px; border-radius: 14px; border: 1px solid #ddd; font-size: 15px;" />
           <button id="add-friend-btn" style="padding: 6px 12px; border-radius: 14px; border: none; background: #70c1ff; color: white; cursor: pointer; font-size: 15px;">추가</button>
-          <button id="show-requests-btn" style="padding: 6px 12px; border-radius: 14px; border: none; background: #ffe08a; color: #333; cursor: pointer; font-size: 15px; margin-left: 10px;">받은 친구요청 보기</button>
+          <button id="show-requests-btn" style="padding: 6px 12px; border-radius: 14px; border: none; background: #ffe08a; color: #333; cursor: pointer; font-size: 15px;">받은 친구요청 보기</button>
+        </div>
+        <div style="margin-bottom: 10px;">
+          <button id="show-friends-btn" style="padding: 6px 12px; border-radius: 14px; border: none; background: #ffe08a; color: #333; cursor: pointer; font-size: 15px;">친구목록 보기</button>
         </div>
         <ul id="friends-list" style="margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; padding: 0; list-style: none; justify-items: start;"></ul>
-        <ul id="requests-list" style="margin-top: 10px; display: none; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; padding: 0; list-style: none; justify-items: start;"></ul>
+        <!-- 친구 요청 모달 -->
+        <div id="requests-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:2000; justify-content:center; align-items:center;">
+          <div style="background:#fff; border-radius:16px; padding:32px 24px; min-width:320px; max-width:90vw; box-shadow:0 4px 24px rgba(0,0,0,0.12); position:relative;">
+            <h3 style="margin-top:0; margin-bottom:18px; font-size:20px;">받은 친구요청</h3>
+            <ul id="requests-list" style="margin:0; padding:0; list-style:none; min-width:220px;"></ul>
+            <button id="close-requests-modal" style="position:absolute; top:12px; right:16px; background:#ffe08a; color:#333; border:none; border-radius:8px; padding:4px 12px; cursor:pointer; font-size:14px;">닫기</button>
+          </div>
+        </div>
         <!-- 친구 추가/목록/요청 UI 끝 -->
       </div>
     </div>

@@ -122,8 +122,17 @@ async function getReceivedRequests() {
   return snap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
 }
 
-// UI 연결
-function initializeFriendsList() {
+export async function removeFriend(friendUid) {
+  const user = auth.currentUser;
+  if (!user) return;
+  // 내 친구목록에서 삭제
+  await deleteDoc(doc(db, "users", user.uid, "friends", friendUid));
+  // 상대방 친구목록에서도 나를 삭제
+  await deleteDoc(doc(db, "users", friendUid, "friends", user.uid));
+}
+window.removeFriend = removeFriend;
+
+export function initializeFriendsList() {
   // user-info 영역 내에서만 탐색하도록 root 지정
   const userInfoRoot = document.getElementById("user-info") || document;
   const friendsList = userInfoRoot.querySelector("#friends-list");
@@ -131,6 +140,9 @@ function initializeFriendsList() {
   const friendInput = userInfoRoot.querySelector("#friend-input");
   const requestsList = userInfoRoot.querySelector("#requests-list");
   const showRequestsBtn = userInfoRoot.querySelector("#show-requests-btn");
+  const showFriendsBtn = userInfoRoot.querySelector("#show-friends-btn");
+  const requestsModal = document.getElementById("requests-modal");
+  const closeRequestsModal = document.getElementById("close-requests-modal");
   let showingRequests = false;
 
   // 친구 추가 버튼
@@ -145,12 +157,16 @@ function initializeFriendsList() {
     if (e.key === "Enter") addFriendBtn.click();
   });
 
-  // 받은 친구요청 보기 버튼
+  // 친구목록 보기 버튼 (friends-list는 항상 보이므로 별도 동작 없음)
+  showFriendsBtn.addEventListener("click", async () => {
+    friendsList.style.display = "grid";
+  });
+
+  // 받은 친구요청 보기 버튼 (모달 오픈)
   showRequestsBtn.addEventListener("click", async () => {
-    if (!showingRequests) {
-      friendsList.style.display = "none";
-      requestsList.style.display = "grid";
-      showRequestsBtn.textContent = "친구목록 보기";
+    if (requestsModal) requestsModal.style.display = "flex";
+    const requestsList = document.getElementById("requests-list");
+    if (requestsList) {
       requestsList.innerHTML = "";
       const received = await getReceivedRequests();
       received.forEach(req => {
@@ -164,22 +180,18 @@ function initializeFriendsList() {
         acceptBtn.addEventListener("click", async () => {
           await acceptFriendRequest(req.uid);
           await renderFriendsList();
-          requestsList.style.display = "none";
-          friendsList.style.display = "grid";
-          showRequestsBtn.textContent = "받은 친구요청 보기";
-          showingRequests = false;
+          if (requestsModal) requestsModal.style.display = "none";
         });
         requestsList.appendChild(li);
       });
-      showingRequests = true;
-    } else {
-      requestsList.style.display = "none";
-      friendsList.style.display = "grid";
-      showRequestsBtn.textContent = "받은 친구요청 보기";
-      showingRequests = false;
-      await renderFriendsList();
     }
   });
+  // 모달 닫기 버튼
+  if (closeRequestsModal) {
+    closeRequestsModal.addEventListener("click", () => {
+      if (requestsModal) requestsModal.style.display = "none";
+    });
+  }
 
   renderFriendsList();
 }
@@ -195,15 +207,41 @@ async function renderFriendsList() {
     friendsList.innerHTML = '<li style="color:#888;">친구가 없습니다.</li>';
     return;
   }
-  friends.forEach(friend => {
+  // 각 친구의 최신 정보 Firestore에서 동적으로 가져오기
+  for (const friend of friends) {
+    let latestName = friend.name;
+    let latestProfile = friend.profileImageUrl;
+    try {
+      const docSnap = await getDoc(doc(db, "users", friend.uid));
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        latestName = data.name || latestName;
+        latestProfile = data.photoURL || latestProfile;
+      }
+    } catch (e) {}
     const li = document.createElement("li");
     li.className = "friend-item";
+    const profileUrl = (latestProfile && latestProfile.startsWith('http')) ? latestProfile : 'https://www.gravatar.com/avatar/?d=mp';
+    const displayName = (latestName && latestName.trim() !== "") ? latestName : "이름없음";
+    const email = friend.email || "";
     li.innerHTML = `
-      <img src="${friend.profileImageUrl || 'https://via.placeholder.com/40'}" style="width:40px; height:40px; border-radius:50%; vertical-align:middle;">
-      <span style="margin-left:10px; font-weight:bold;">${friend.name || friend.email}</span>
+      <img src="${profileUrl}" style="width:40px; height:40px; border-radius:50%; vertical-align:middle;" onerror="this.onerror=null;this.src='https://www.gravatar.com/avatar/?d=mp';">
+      <span style="margin-left:10px; font-weight:bold;">${displayName}</span>
+      <span style="margin-left:8px; color:#888; font-size:13px;">${email}</span>
+      <button class="delete-friend-btn" style="margin-left:12px; background:#ffb3b3; color:#fff; border:none; border-radius:8px; padding:2px 10px; cursor:pointer; font-size:13px;">삭제</button>
     `;
+    // 삭제 버튼 이벤트 연결
+    const deleteBtn = li.querySelector('.delete-friend-btn');
+    deleteBtn.addEventListener('click', async () => {
+      if (confirm('정말 이 친구를 삭제하시겠습니까?')) {
+        await window.removeFriend(friend.uid);
+        await renderFriendsList();
+      }
+    });
     friendsList.appendChild(li);
-  });
+  }
 }
 
-document.addEventListener("DOMContentLoaded", initializeFriendsList); 
+// DOMContentLoaded에서 initializeFriendsList를 호출하지 않음
+// document.addEventListener("DOMContentLoaded", initializeFriendsList); 
+window.initializeFriendsList = initializeFriendsList; 

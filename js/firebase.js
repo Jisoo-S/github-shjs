@@ -68,7 +68,10 @@ export function showView(view) {
   if (view === 'calendar' && calendarView) calendarView.style.display = "block";
   if (view === 'category' && categoryView) categoryView.style.display = "block";
   if (view === 'friends' && friendsView) friendsView.style.display = "block";
-  if (view === 'plus' && plusView) plusView.style.display = "block";
+  if (view === 'plus' && plusView) {
+    plusView.style.display = "block";
+    if (typeof window.initializeFriendsList === 'function') window.initializeFriendsList();
+  }
   localStorage.setItem('lastView', view);
 
   // 캘린더 뷰일 때 캘린더 초기화 (initializeCalendar 함수가 전역에 노출되어 있어야 합니다)
@@ -473,6 +476,7 @@ async function uploadProfileImage(file) {
 onAuthStateChanged(auth, (user) => {
   if (user) {
     handleUserLogin(user);
+    if (typeof window.initializeFriendsList === 'function') window.initializeFriendsList();
   } else {
     handleUserLogout();
   }
