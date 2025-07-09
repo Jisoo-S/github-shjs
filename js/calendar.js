@@ -1,10 +1,12 @@
 // Firebase 관련 함수 임포트
-import { getCurrentUser, getTodosFromFirebase, getCalendarNotesFromFirebase, addCalendarNoteToFirebase } from './firebase.js';
+import { getCurrentUser, getTodosFromFirebase, getCalendarNotesFromFirebase, addCalendarNoteToFirebase, subscribeCalendarNotes } from './firebase.js';
 
 let currentDate = new Date();
 let calendarMode = "month";
 let todos = []; // 할 일 목록을 저장할 배열
+let friendTodos = [];
 let isFriendCalendarMode = false;
+let unsubscribeFriendCalendarNotes = null;
 
 // 캘린더 뷰 초기화 함수
 async function initializeCalendar() {
@@ -178,7 +180,11 @@ function formatDate(date) {
 
 function getTodosForDate(date) {
   const formattedDate = formatDate(date);
-  return todos.filter(todo => todo.date === formattedDate);
+  if (isFriendCalendarMode) {
+    return friendTodos.filter(todo => todo.date === formattedDate);
+  } else {
+    return todos.filter(todo => todo.date === formattedDate);
+  }
 }
 
 function getPinnedTodosForDate(date) {
@@ -221,107 +227,109 @@ function createCalendarCell(date) {
   }
 
   // 투두 표시
-  const todos = getTodosForDate(date);
-  if (todos.length > 0) {
-    const todoIndicator = document.createElement('div');
-    todoIndicator.className = 'todo-indicator';
-    const isAllCompleted = areAllTodosCompleted(todos);
-    todoIndicator.style.cssText = `
-      width: 8px;
-      height: 8px;
-      background-color: ${isAllCompleted ? '#999999' : '#ff4d4d'};
-      border-radius: 50%;
-      position: absolute;
-      top: 4px;
-      right: 4px;
-    `;
-    cell.appendChild(todoIndicator);
+  if (!isFriendCalendarMode) {
+    const todosForCell = getTodosForDate(date);
+    if (todosForCell.length > 0) {
+      const todoIndicator = document.createElement('div');
+      todoIndicator.className = 'todo-indicator';
+      const isAllCompleted = areAllTodosCompleted(todosForCell);
+      todoIndicator.style.cssText = `
+        width: 8px;
+        height: 8px;
+        background-color: ${isAllCompleted ? '#999999' : '#ff4d4d'};
+        border-radius: 50%;
+        position: absolute;
+        top: 4px;
+        right: 4px;
+      `;
+      cell.appendChild(todoIndicator);
 
-    // 툴팁 생성
-    const tooltip = document.createElement('div');
-    tooltip.className = 'todo-tooltip';
-    tooltip.style.cssText = `
-      display: none;
-      position: absolute;
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      z-index: 9999;
-      min-width: 200px;
-      max-width: 300px;
-    `;
+      // 툴팁 생성
+      const tooltip = document.createElement('div');
+      tooltip.className = 'todo-tooltip';
+      tooltip.style.cssText = `
+        display: none;
+        position: absolute;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        z-index: 9999;
+        min-width: 200px;
+        max-width: 300px;
+      `;
 
-    // 툴팁 내용 업데이트 함수
-    const updateTooltipContent = () => {
-      const currentTodos = getTodosForDate(date);
-      if (currentTodos.length > 0) {
-        tooltip.innerHTML = `
-          <div style="font-weight: bold; margin-bottom: 8px; color: #333;">할일 목록</div>
-          ${currentTodos.map(todo => `
-            <div style="
-              padding: 6px 0;
-              border-bottom: 1px solid #eee;
-              display: flex;
-              align-items: center;
-              gap: 8px;
-              ${todo.completed ? 'opacity: 0.6;' : ''}
-            ">
-              <span style="
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                background-color: ${todo.category === '업무' ? '#ff9f9f' : 
-                                 todo.category === '개인' ? '#9f9fff' : 
-                                 todo.category === '학습' ? '#9fff9f' : '#ffcc70'};
-                display: inline-block;
-              "></span>
-              <span style="
-                flex: 1;
-                text-decoration: ${todo.completed ? 'line-through' : 'none'};
-                color: ${todo.completed ? '#999' : '#333'};
-              ">${todo.text}</span>
-            </div>
-          `).join('')}
-        `;
-      }
-    };
+      // 툴팁 내용 업데이트 함수
+      const updateTooltipContent = () => {
+        const currentTodos = getTodosForDate(date);
+        if (currentTodos.length > 0) {
+          tooltip.innerHTML = `
+            <div style="font-weight: bold; margin-bottom: 8px; color: #333;">할일 목록</div>
+            ${currentTodos.map(todo => `
+              <div style="
+                padding: 6px 0;
+                border-bottom: 1px solid #eee;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                ${todo.completed ? 'opacity: 0.6;' : ''}
+              ">
+                <span style="
+                  width: 8px;
+                  height: 8px;
+                  border-radius: 50%;
+                  background-color: ${todo.category === '업무' ? '#ff9f9f' : 
+                                   todo.category === '개인' ? '#9f9fff' : 
+                                   todo.category === '학습' ? '#9fff9f' : '#ffcc70'};
+                  display: inline-block;
+                "></span>
+                <span style="
+                  flex: 1;
+                  text-decoration: ${todo.completed ? 'line-through' : 'none'};
+                  color: ${todo.completed ? '#999' : '#333'};
+                ">${todo.text}</span>
+              </div>
+            `).join('')}
+          `;
+        }
+      };
 
-    // 초기 툴팁 내용 설정
-    updateTooltipContent();
-
-    // 마우스 이벤트 처리
-    cell.addEventListener('mouseenter', (e) => {
+      // 초기 툴팁 내용 설정
       updateTooltipContent();
-      document.body.appendChild(tooltip);
-      tooltip.style.display = 'block';
-      
-      // 툴팁 위치 계산 (window 기준)
-      const rect = cell.getBoundingClientRect();
-      let top = rect.bottom + window.scrollY - 24;
-      let left = rect.left + window.scrollX + rect.width / 2 - tooltip.offsetWidth / 2;
-      // 화면 경계 체크
-      if (left < 0) left = 8;
-      if (left + tooltip.offsetWidth > window.innerWidth) left = window.innerWidth - tooltip.offsetWidth - 8;
-      if (top + tooltip.offsetHeight > window.innerHeight + window.scrollY) {
-        top = rect.top + window.scrollY - tooltip.offsetHeight - 8;
-      }
-      if (top < 0) top = 8;
-      tooltip.style.left = left + 'px';
-      tooltip.style.top = top + 'px';
-      tooltip.style.position = 'absolute';
-      tooltip.style.zIndex = 9999;
-    });
 
-    cell.addEventListener('mouseleave', () => {
-      tooltip.style.display = 'none';
-      if (tooltip.parentNode === document.body) {
-        document.body.removeChild(tooltip);
-      }
-    });
+      // 마우스 이벤트 처리
+      cell.addEventListener('mouseenter', (e) => {
+        updateTooltipContent();
+        document.body.appendChild(tooltip);
+        tooltip.style.display = 'block';
+        
+        // 툴팁 위치 계산 (window 기준)
+        const rect = cell.getBoundingClientRect();
+        let top = rect.bottom + window.scrollY - 24;
+        let left = rect.left + window.scrollX + rect.width / 2 - tooltip.offsetWidth / 2;
+        // 화면 경계 체크
+        if (left < 0) left = 8;
+        if (left + tooltip.offsetWidth > window.innerWidth) left = window.innerWidth - tooltip.offsetWidth - 8;
+        if (top + tooltip.offsetHeight > window.innerHeight + window.scrollY) {
+          top = rect.top + window.scrollY - tooltip.offsetHeight - 8;
+        }
+        if (top < 0) top = 8;
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = top + 'px';
+        tooltip.style.position = 'absolute';
+        tooltip.style.zIndex = 9999;
+      });
 
-    cell.appendChild(tooltip);
+      cell.addEventListener('mouseleave', () => {
+        tooltip.style.display = 'none';
+        if (tooltip.parentNode === document.body) {
+          document.body.removeChild(tooltip);
+        }
+      });
+
+      cell.appendChild(tooltip);
+    }
   }
   
   cell.addEventListener('click', () => {
@@ -366,9 +374,19 @@ function updateCalendarCell(date) {
 }
 
 // 캘린더 메모 관련 함수들
+function getUserMemoKey() {
+  const user = getCurrentUser && getCurrentUser();
+  return user && user.uid ? 'calendar_memos_' + user.uid : 'calendar_memos';
+}
+
 function saveMemo(date, memo) {
   const formattedDate = formatDate(date);
-  const memos = JSON.parse(localStorage.getItem('calendar_memos') || '{}');
+  if (isFriendCalendarMode) {
+    // 친구 달력 모드에서는 내 localStorage에 저장하지 않음
+    return;
+  }
+  const memoKey = getUserMemoKey();
+  const memos = JSON.parse(localStorage.getItem(memoKey) || '{}');
   if (!memos[formattedDate]) {
     memos[formattedDate] = [];
   }
@@ -379,33 +397,32 @@ function saveMemo(date, memo) {
       date: formattedDate
     };
     memos[formattedDate].push(memoObj);
-    // 파이어베이스에도 저장
     addCalendarNoteToFirebase({ text: memo, date: formattedDate });
   }
-  localStorage.setItem('calendar_memos', JSON.stringify(memos));
+  localStorage.setItem(memoKey, JSON.stringify(memos));
 }
 
 function getMemo(date) {
   const formattedDate = formatDate(date);
   if (isFriendCalendarMode) {
-    // 친구 달력 모드: todos 배열에서 해당 날짜 메모만 추출
-    return todos.filter(todo => todo.date === formattedDate);
+    return friendTodos.filter(todo => todo.date === formattedDate);
   } else {
-    // 내 달력: localStorage에서 메모 추출
-    const memos = JSON.parse(localStorage.getItem('calendar_memos') || '{}');
+    const memoKey = getUserMemoKey();
+    const memos = JSON.parse(localStorage.getItem(memoKey) || '{}');
     return memos[formattedDate] || [];
   }
 }
 
 function deleteMemo(date, memoId) {
   const formattedDate = formatDate(date);
-  const memos = JSON.parse(localStorage.getItem('calendar_memos') || '{}');
+  const memoKey = getUserMemoKey();
+  const memos = JSON.parse(localStorage.getItem(memoKey) || '{}');
   if (memos[formattedDate]) {
     memos[formattedDate] = memos[formattedDate].filter(memo => memo.id !== memoId);
     if (memos[formattedDate].length === 0) {
       delete memos[formattedDate];
     }
-    localStorage.setItem('calendar_memos', JSON.stringify(memos));
+    localStorage.setItem(memoKey, JSON.stringify(memos));
   }
 }
 
@@ -763,16 +780,27 @@ document.addEventListener("DOMContentLoaded", () => {
 }); 
 
 window.loadFriendCalendar = async function(friendUid) {
-  currentDate = new Date(); // 친구 달력 진입 시 현재 날짜로 초기화
+  currentDate = new Date();
   isFriendCalendarMode = true;
-  todos = await getCalendarNotesFromFirebase(friendUid);
-  if (calendarMode === "month") showMonthView();
-  else if (calendarMode === "week") showWeekView();
-  else showTodayView();
+  if (unsubscribeFriendCalendarNotes) {
+    unsubscribeFriendCalendarNotes();
+    unsubscribeFriendCalendarNotes = null;
+  }
+  unsubscribeFriendCalendarNotes = subscribeCalendarNotes(friendUid, (notes) => {
+    friendTodos = notes;
+    if (calendarMode === "month") showMonthView();
+    else if (calendarMode === "week") showWeekView();
+    else showTodayView();
+  });
 }; 
 
 window.initializeCalendar = async function() {
   isFriendCalendarMode = false;
+  friendTodos = [];
+  if (unsubscribeFriendCalendarNotes) {
+    unsubscribeFriendCalendarNotes();
+    unsubscribeFriendCalendarNotes = null;
+  }
   await initializeCalendar();
 };
 

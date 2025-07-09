@@ -1,7 +1,7 @@
 // Firebase SDK 임포트
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
@@ -482,6 +482,19 @@ async function uploadProfileImage(file) {
       if (profileImage) profileImage.src = url || 'https://www.gravatar.com/avatar/?d=mp';
     }, 'image/jpeg', 0.95);
   };
+}
+
+// 특정 사용자의 calendarNotes를 실시간 구독하는 함수
+export function subscribeCalendarNotes(uid, callback) {
+  const db = getFirestore();
+  const col = collection(db, "users", uid, "calendarNotes");
+  return onSnapshot(col, (querySnapshot) => {
+    const notes = [];
+    querySnapshot.forEach((doc) => {
+      notes.push({ id: doc.id, ...doc.data() });
+    });
+    callback(notes);
+  });
 }
 
 // 인증 상태 변화 시 이름/프로필 UI 갱신
