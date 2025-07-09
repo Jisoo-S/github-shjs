@@ -81,11 +81,14 @@ async function acceptFriendRequest(requesterUid) {
   const requesterData = requesterDoc.data() || {};
   const requesterName = requesterData.name || "이름없음";
   const requesterProfile = requesterData.profileImageUrl || "https://via.placeholder.com/40";
-  const requesterEmail = requesterData.email || requesterDoc.id || "unknown";
+  let requesterEmail = requesterData.email;
+  if (!requesterEmail) {
+    requesterEmail = "unknown";
+  }
   // 내 정보
   const myName = user.displayName || "이름없음";
   const myProfile = user.photoURL || "https://via.placeholder.com/40";
-  const myEmail = user.email || user.uid || "unknown";
+  const myEmail = user.email || "unknown";
   // 1. 내 친구목록에 추가 (모든 정보 포함)
   await setDoc(doc(db, "users", user.uid, "friends", requesterUid), {
     email: requesterEmail,
@@ -124,6 +127,23 @@ async function getReceivedRequests() {
   return snap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
 }
 
+// 내가 보낸 친구요청 불러오기
+async function getMyFriendRequests() {
+  const user = auth.currentUser;
+  if (!user) return [];
+  const snap = await getDocs(collection(db, "users", user.uid, "friendRequests"));
+  return snap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+}
+
+// 친구요청 취소
+async function cancelFriendRequest(targetUid) {
+  const user = auth.currentUser;
+  if (!user) return;
+  await deleteDoc(doc(db, "users", user.uid, "friendRequests", targetUid));
+  await deleteDoc(doc(db, "users", targetUid, "receivedRequests", user.uid));
+}
+window.cancelFriendRequest = cancelFriendRequest;
+
 export async function removeFriend(friendUid) {
   const user = auth.currentUser;
   if (!user) return;
@@ -148,21 +168,39 @@ export function initializeFriendsList() {
   const closeRequestsModal = document.getElementById("close-requests-modal");
   let showingRequests = false;
 
+  const sentRequestsList = userInfoRoot.querySelector("#sent-requests-list");
+  if (!sentRequestsList) {
+    const ul = document.createElement("ul");
+    ul.id = "sent-requests-list";
+    ul.style.margin = "0 0 10px 0";
+    ul.style.padding = "0";
+    ul.style.listStyle = "none";
+    friendsList.parentNode.insertBefore(ul, friendsList);
+  }
+
   // 친구 추가 버튼
   addFriendBtn.addEventListener("click", async () => {
+    if (addFriendBtn.disabled) return;
     const friendEmail = friendInput.value.trim();
     if (!friendEmail) return;
-    await sendFriendRequest(friendEmail);
-    friendInput.value = "";
-    await renderFriendsList();
+    addFriendBtn.disabled = true;
+    try {
+      await sendFriendRequest(friendEmail);
+    } finally {
+      addFriendBtn.disabled = false;
+      friendInput.value = "";
+      await renderFriendsList();
+      await updateRequestBadge();
+      await renderSentRequestsList();
+    }
   });
   friendInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") addFriendBtn.click();
-  });
-
-  // 친구목록 보기 버튼 (friends-list는 항상 보이므로 별도 동작 없음)
-  showFriendsBtn.addEventListener("click", async () => {
-    friendsList.style.display = "grid";
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (friendInput.value.trim()) {
+        addFriendBtn.click();
+      }
+    }
   });
 
   // 받은 친구요청 보기 버튼 (모달 오픈)
@@ -171,19 +209,29 @@ export function initializeFriendsList() {
     const requestsList = document.getElementById("requests-list");
     if (requestsList) {
       requestsList.innerHTML = "";
-      const received = await getReceivedRequests();
+      let received = await getReceivedRequests();
+      // 중복 이메일 제거
+      const uniqueMap = new Map();
       received.forEach(req => {
+        if (req.email && !uniqueMap.has(req.email)) {
+          uniqueMap.set(req.email, req);
+        }
+      });
+      const uniqueReceived = Array.from(uniqueMap.values());
+      uniqueReceived.forEach(req => {
         const li = document.createElement("li");
         li.className = "friend-item";
         li.innerHTML = `
           <span>${req.email}</span>
-          <button class="accept-request-btn" style="margin-left: 6px;">수락</button>
+          <button class="accept-request-btn" style="margin-top:6px; padding: 6px 12px; border-radius: 14px; border: none; background: #ffe08a; color: #333; cursor: pointer; font-size: 15px; font-weight: 500;">수락</button>
         `;
         const acceptBtn = li.querySelector(".accept-request-btn");
         acceptBtn.addEventListener("click", async () => {
           await acceptFriendRequest(req.uid);
           await renderFriendsList();
           if (requestsModal) requestsModal.style.display = "none";
+          await updateRequestBadge();
+          await renderSentRequestsList();
         });
         requestsList.appendChild(li);
       });
@@ -197,6 +245,8 @@ export function initializeFriendsList() {
   }
 
   renderFriendsList();
+  renderSentRequestsList();
+  updateRequestBadge();
 }
 
 // 친구목록 렌더링
@@ -231,7 +281,8 @@ async function renderFriendsList() {
       <img src="${profileUrl}" style="width:40px; height:40px; border-radius:50%; vertical-align:middle;" onerror="this.onerror=null;this.src='https://www.gravatar.com/avatar/?d=mp';">
       <span style="margin-left:10px; font-weight:bold;">${displayName}</span>
       <span style="margin-left:8px; color:#888; font-size:13px;">${email}</span>
-      <button class="delete-friend-btn" style="margin-left:12px; background:#ffb3b3; color:#fff; border:none; border-radius:8px; padding:2px 10px; cursor:pointer; font-size:13px;">삭제</button>
+      <br>
+      <button class="delete-friend-btn" style="margin-top:6px; background:#ffb3b3; color:#fff; border:none; border-radius:8px; padding:2px 10px; cursor:pointer; font-size:13px;">삭제</button>
     `;
     // 삭제 버튼 이벤트 연결
     const deleteBtn = li.querySelector('.delete-friend-btn');
@@ -245,6 +296,59 @@ async function renderFriendsList() {
   }
 }
 
+// 내가 보낸 친구요청 목록 렌더링
+async function renderSentRequestsList() {
+  const userInfoRoot = document.getElementById("user-info") || document;
+  const sentRequestsList = userInfoRoot.querySelector("#sent-requests-list");
+  if (!sentRequestsList) return;
+  sentRequestsList.innerHTML = "";
+  const requests = await getMyFriendRequests();
+  if (requests.length === 0) {
+    sentRequestsList.style.display = "none";
+    return;
+  }
+  sentRequestsList.style.display = "block";
+  requests.forEach(req => {
+    const li = document.createElement("li");
+    li.className = "sent-request-item";
+    li.style.marginBottom = "6px";
+    li.innerHTML = `
+      <span style="color:#888; font-size:14px;">${req.email}</span>
+      <span style="margin-left:8px; color:#888; font-size:13px; font-weight:bold;">대기중</span>
+      <button class="cancel-request-btn" style="margin-left:10px; background:#ffe08a; color:#333; border:none; border-radius:8px; padding:2px 10px; cursor:pointer; font-size:13px;">요청 취소</button>
+    `;
+    const cancelBtn = li.querySelector('.cancel-request-btn');
+    cancelBtn.addEventListener('click', async () => {
+      if (confirm('이 친구요청을 취소하시겠습니까?')) {
+        await cancelFriendRequest(req.uid);
+        await renderSentRequestsList();
+        await updateRequestBadge();
+      }
+    });
+    sentRequestsList.appendChild(li);
+  });
+}
+
 // DOMContentLoaded에서 initializeFriendsList를 호출하지 않음
 // document.addEventListener("DOMContentLoaded", initializeFriendsList); 
 window.initializeFriendsList = initializeFriendsList; 
+
+// 받은 친구요청 개수 뱃지 표시
+async function updateRequestBadge() {
+  const received = await getReceivedRequests();
+  // 중복 이메일 제거
+  const uniqueEmails = new Set(received.map(r => r.email));
+  const count = uniqueEmails.size;
+  let badge = showRequestsBtn.querySelector('.request-badge');
+  if (!badge) {
+    badge = document.createElement('span');
+    badge.className = 'request-badge';
+    badge.style.cssText = 'display:inline-block; min-width:22px; height:22px; background:#ffe08a; color:#333; border-radius:50%; font-size:14px; font-weight:bold; text-align:center; line-height:22px; margin-left:6px; vertical-align:middle;';
+    showRequestsBtn.appendChild(badge);
+  }
+  badge.textContent = count > 0 ? count : '';
+  badge.style.display = count > 0 ? 'inline-block' : 'none';
+}
+// 최초 1회, 그리고 친구목록 갱신 시마다 호출
+updateRequestBadge();
+window.updateRequestBadge = updateRequestBadge; 

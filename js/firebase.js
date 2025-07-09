@@ -115,7 +115,11 @@ export async function signup() {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     console.log("회원가입 성공:", userCredential.user.email);
     alert("회원가입 성공!");
-    
+    // Firestore에 사용자 정보 저장
+    await setDoc(doc(db, "users", userCredential.user.uid), {
+      email: userCredential.user.email,
+      name: userCredential.user.displayName || "이름없음"
+    }, { merge: true });
     // 입력 필드 초기화
     loginEmailInput.value = '';
     loginPasswordInput.value = '';
