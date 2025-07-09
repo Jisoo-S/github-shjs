@@ -124,11 +124,13 @@ async function getReceivedRequests() {
 
 // UI 연결
 function initializeFriendsList() {
-  const friendsList = document.getElementById("friends-list");
-  const addFriendBtn = document.getElementById("add-friend-btn");
-  const friendInput = document.getElementById("friend-input");
-  const requestsList = document.getElementById("requests-list");
-  const showRequestsBtn = document.getElementById("show-requests-btn");
+  // user-info 영역 내에서만 탐색하도록 root 지정
+  const userInfoRoot = document.getElementById("user-info") || document;
+  const friendsList = userInfoRoot.querySelector("#friends-list");
+  const addFriendBtn = userInfoRoot.querySelector("#add-friend-btn");
+  const friendInput = userInfoRoot.querySelector("#friend-input");
+  const requestsList = userInfoRoot.querySelector("#requests-list");
+  const showRequestsBtn = userInfoRoot.querySelector("#show-requests-btn");
   let showingRequests = false;
 
   // 친구 추가 버튼
@@ -184,7 +186,8 @@ function initializeFriendsList() {
 
 // 친구목록 렌더링
 async function renderFriendsList() {
-  const friendsList = document.getElementById("friends-list");
+  const userInfoRoot = document.getElementById("user-info") || document;
+  const friendsList = userInfoRoot.querySelector("#friends-list");
   if (!friendsList) return;
   friendsList.innerHTML = "";
   const friends = await getMyFriends();
@@ -198,7 +201,6 @@ async function renderFriendsList() {
     li.innerHTML = `
       <img src="${friend.profileImageUrl || 'https://via.placeholder.com/40'}" style="width:40px; height:40px; border-radius:50%; vertical-align:middle;">
       <span style="margin-left:10px; font-weight:bold;">${friend.name || friend.email}</span>
-      <span style="margin-left:10px; color:#888;">${friend.email}</span>
     `;
     friendsList.appendChild(li);
   });
