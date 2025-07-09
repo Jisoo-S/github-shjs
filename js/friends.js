@@ -162,7 +162,8 @@ export function initializeFriendsList() {
   const addFriendBtn = userInfoRoot.querySelector("#add-friend-btn");
   const friendInput = userInfoRoot.querySelector("#friend-input");
   const requestsList = userInfoRoot.querySelector("#requests-list");
-  const showRequestsBtn = userInfoRoot.querySelector("#show-requests-btn");
+  // showRequestsBtn은 항상 document에서 가져오도록 수정
+  const showRequestsBtn = document.getElementById("show-requests-btn");
   const showFriendsBtn = userInfoRoot.querySelector("#show-friends-btn");
   const requestsModal = document.getElementById("requests-modal");
   const closeRequestsModal = document.getElementById("close-requests-modal");
@@ -335,6 +336,8 @@ window.initializeFriendsList = initializeFriendsList;
 
 // 받은 친구요청 개수 뱃지 표시
 async function updateRequestBadge() {
+  const showRequestsBtn = document.getElementById("show-requests-btn");
+  if (!showRequestsBtn) return;
   const received = await getReceivedRequests();
   // 중복 이메일 제거
   const uniqueEmails = new Set(received.map(r => r.email));
