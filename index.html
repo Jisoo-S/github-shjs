@@ -269,7 +269,16 @@
     });
     if (plusBtn) {
       plusBtn.addEventListener("click", () => {
-        if (window.showView) window.showView('plus');
+        // friend-home이 떠 있을 때는 back 버튼과 동일하게 동작
+        const friendHome = document.getElementById('friend-home');
+        const userInfo = document.getElementById('user-info');
+        if (friendHome && friendHome.style.display !== 'none') {
+          friendHome.style.display = 'none';
+          if (userInfo) userInfo.style.display = 'block';
+          if (window.initializeCalendar) window.initializeCalendar();
+        } else {
+          if (window.showView) window.showView('plus');
+        }
       });
     }
     // 페이지 로드 시 마지막 뷰 복원
