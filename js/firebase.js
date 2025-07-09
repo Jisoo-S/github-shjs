@@ -1,8 +1,9 @@
 // Firebase SDK 임포트
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
 // Firebase 설정
 const firebaseConfig = {
@@ -20,6 +21,7 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 // HTML 요소 참조
 const loginForm = document.getElementById('login-form');
@@ -28,6 +30,12 @@ const loginEmailInput = document.getElementById('login-email');
 const loginPasswordInput = document.getElementById('login-password');
 const profileImage = document.getElementById('profile-image');
 const userEmail = document.getElementById('user-email');
+const profileName = document.getElementById('profile-name');
+const editNameBtn = document.getElementById('edit-name-btn');
+const editNameInput = document.getElementById('edit-name-input');
+const saveNameBtn = document.getElementById('save-name-btn');
+const profileImageInput = document.getElementById('profile-image-input');
+const changeProfileBtn = document.getElementById('change-profile-btn');
 
 // 메인 뷰 요소들
 const todoMain = document.querySelector(".main");
@@ -203,7 +211,7 @@ export async function logout() {
     // UI 업데이트
     if (loginForm) loginForm.style.display = 'block';
     if (userInfo) userInfo.style.display = 'none';
-    if (profileImage) profileImage.src = 'https://via.placeholder.com/100';
+    if (profileImage) profileImage.src = 'https://www.gravatar.com/avatar/?d=mp';
     if (userEmail) userEmail.textContent = '';
     
     // friends-view로 전환
@@ -324,56 +332,225 @@ export async function getFriendsFromFirebase() {
   }
 }
 
-// 인증 상태 변경 감지
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    try {
-      // 사용자가 로그인한 경우
-      console.log("사용자가 로그인했습니다:", user.email);
-      if (loginForm) loginForm.style.display = 'none';
-      if (userInfo) userInfo.style.display = 'block';
-      if (profileImage) profileImage.src = user.photoURL || 'https://via.placeholder.com/100';
-      if (userEmail) userEmail.textContent = user.email;
+// 친구 요청 보내기
+export async function sendFriendRequest(targetEmail) {
+  const user = getCurrentUser();
+  if (!user) throw new Error("로그인 필요");
+  if (user.email === targetEmail) throw new Error("본인에게 요청 불가");
 
-      // 필요한 데이터 로드
-      const loadPromises = [];
-      
-      if (window.loadTodoList) {
-        console.log("loadTodoList 호출");
-        loadPromises.push(window.loadTodoList());
-      }
-      if (window.loadNotes) {
-        console.log("loadNotes 호출");
-        loadPromises.push(window.loadNotes());
-      }
-      if (window.loadCalendarNotes) {
-        console.log("loadCalendarNotes 호출");
-        loadPromises.push(window.loadCalendarNotes());
-      }
+  // 상대방 uid 찾기
+  const usersRef = collection(db, "users");
+  const usersSnap = await getDocs(usersRef);
+  let targetUid = null;
+  usersSnap.forEach(doc => {
+    if (doc.data().email === targetEmail) targetUid = doc.id;
+  });
+  if (!targetUid) throw new Error("상대방 이메일을 찾을 수 없습니다.");
 
-      await Promise.all(loadPromises);
-      console.log("모든 데이터 로드 완료");
-    } catch (error) {
-      console.error("데이터 로드 중 오류 발생:", error);
-    }
+  // 내 요청 목록에 추가
+  await setDoc(doc(db, "users", user.uid, "friendRequests", targetUid), {
+    email: targetEmail,
+    status: "pending"
+  });
+  // 상대방 받은 요청 목록에 추가
+  await setDoc(doc(db, "users", targetUid, "receivedRequests", user.uid), {
+    email: user.email,
+    status: "pending"
+  });
+}
+
+// 내가 보낸 친구 요청 목록
+export async function getFriendRequests() {
+  const user = getCurrentUser();
+  if (!user) throw new Error("로그인 필요");
+  const snap = await getDocs(collection(db, "users", user.uid, "friendRequests"));
+  return snap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+}
+// 내가 받은 친구 요청 목록
+export async function getReceivedRequests() {
+  const user = getCurrentUser();
+  if (!user) throw new Error("로그인 필요");
+  const snap = await getDocs(collection(db, "users", user.uid, "receivedRequests"));
+  return snap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+}
+// 친구 요청 수락
+export async function acceptFriendRequest(requesterUid, requesterEmail) {
+  const user = getCurrentUser();
+  if (!user) throw new Error("로그인 필요");
+  // 내 친구 목록에 추가
+  await setDoc(doc(db, "users", user.uid, "friends", requesterUid), {
+    email: requesterEmail
+  });
+  // 상대방 친구 목록에 나 추가
+  await setDoc(doc(db, "users", requesterUid, "friends", user.uid), {
+    email: user.email
+  });
+  // 요청 삭제
+  await deleteDoc(doc(db, "users", user.uid, "receivedRequests", requesterUid));
+  await deleteDoc(doc(db, "users", requesterUid, "friendRequests", user.uid));
+}
+// 친구 삭제
+export async function removeFriend(friendUid) {
+  const user = getCurrentUser();
+  if (!user) throw new Error("로그인 필요");
+  await deleteDoc(doc(db, "users", user.uid, "friends", friendUid));
+  await deleteDoc(doc(db, "users", friendUid, "friends", user.uid));
+}
+// 친구 요청 취소
+export async function cancelFriendRequest(targetUid) {
+  const user = getCurrentUser();
+  if (!user) throw new Error("로그인 필요");
+  await deleteDoc(doc(db, "users", user.uid, "friendRequests", targetUid));
+  await deleteDoc(doc(db, "users", targetUid, "receivedRequests", user.uid));
+}
+
+// 이름 Firestore에 저장 및 UI 갱신 함수
+async function updateUserName(newName) {
+  const user = auth.currentUser;
+  if (!user) return;
+  await setDoc(doc(db, "users", user.uid), { name: newName }, { merge: true });
+  await updateProfile(user, { displayName: newName });
+  if (profileName) profileName.textContent = newName;
+}
+// Firestore에서 이름 불러오기
+async function loadUserName() {
+  const user = auth.currentUser;
+  if (!user) return;
+  const userDoc = await getDoc(doc(db, "users", user.uid));
+  if (userDoc.exists() && userDoc.data().name) {
+    if (profileName) profileName.textContent = userDoc.data().name;
+    if (editNameInput) editNameInput.value = userDoc.data().name;
   } else {
-    // 사용자가 로그아웃한 경우
-    console.log("사용자가 로그아웃했습니다");
-    if (loginForm) loginForm.style.display = 'block';
-    if (userInfo) userInfo.style.display = 'none';
-    if (profileImage) profileImage.src = 'https://via.placeholder.com/100';
-    if (userEmail) userEmail.textContent = '';
+    if (profileName) profileName.textContent = user.displayName || "이름 없음";
+    if (editNameInput) editNameInput.value = user.displayName || "";
+  }
+}
+// 프로필 사진 업로드 및 갱신 함수
+async function uploadProfileImage(file) {
+  const user = auth.currentUser;
+  if (!user || !file) return;
 
-    // UI 초기화
-    try {
-      if (window.clearTodoListUI) window.clearTodoListUI();
-      if (window.clearNotesUI) window.clearNotesUI();
-      if (window.clearCalendarNotesUI) window.clearCalendarNotesUI();
-    } catch (error) {
-      console.error("UI 초기화 중 오류 발생:", error);
-    }
+  // 파일을 이미지로 읽기
+  const img = new Image();
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+
+  img.onload = async function() {
+    // 정사각형 canvas 생성 (가장 짧은 변 기준)
+    const size = Math.min(img.width, img.height);
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    // 중앙 기준으로 자르기
+    ctx.drawImage(
+      img,
+      (img.width - size) / 2,
+      (img.height - size) / 2,
+      size,
+      size,
+      0,
+      0,
+      size,
+      size
+    );
+    // canvas를 Blob으로 변환
+    canvas.toBlob(async (blob) => {
+      const fileRef = storageRef(storage, `profileImages/${user.uid}`);
+      await uploadBytes(fileRef, blob);
+      const url = await getDownloadURL(fileRef);
+      await updateProfile(user, { photoURL: url });
+      await setDoc(doc(db, "users", user.uid), { photoURL: url }, { merge: true });
+      if (profileImage) profileImage.src = url || 'https://www.gravatar.com/avatar/?d=mp';
+    }, 'image/jpeg', 0.95);
+  };
+}
+
+// 인증 상태 변화 시 이름/프로필 UI 갱신
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    handleUserLogin(user);
+  } else {
+    handleUserLogout();
   }
 });
+async function handleUserLogin(user) {
+  try {
+    if (profileImage) profileImage.src = (user.photoURL ? user.photoURL : 'https://www.gravatar.com/avatar/?d=mp');
+    if (userEmail) userEmail.textContent = user.email;
+    await loadUserName();
+    if (loginForm) loginForm.style.display = 'none';
+    if (userInfo) userInfo.style.display = 'block';
+    // 데이터 로드
+    const loadPromises = [];
+    if (window.loadTodoList) loadPromises.push(window.loadTodoList());
+    if (window.loadNotes) loadPromises.push(window.loadNotes());
+    if (window.loadCalendarNotes) loadPromises.push(window.loadCalendarNotes());
+    await Promise.all(loadPromises);
+  } catch (error) {
+    console.error("데이터 로드 중 오류 발생:", error);
+  }
+}
+function handleUserLogout() {
+  if (loginForm) loginForm.style.display = 'block';
+  if (userInfo) userInfo.style.display = 'none';
+  if (profileImage) profileImage.src = 'https://www.gravatar.com/avatar/?d=mp';
+  if (userEmail) userEmail.textContent = '';
+  if (profileName) profileName.textContent = '';
+  if (editNameInput) editNameInput.value = '';
+  try {
+    if (window.clearTodoListUI) window.clearTodoListUI();
+    if (window.clearNotesUI) window.clearNotesUI();
+    if (window.clearCalendarNotesUI) window.clearCalendarNotesUI();
+  } catch (error) {
+    console.error("UI 초기화 중 오류 발생:", error);
+  }
+}
+// 이름 변경 버튼 이벤트
+if (editNameBtn && editNameInput && saveNameBtn) {
+  editNameBtn.onclick = () => {
+    editNameInput.style.display = 'inline-block';
+    saveNameBtn.style.display = 'inline-block';
+    editNameInput.value = profileName.textContent;
+    profileName.style.display = 'none';
+    editNameBtn.style.display = 'none';
+    editNameInput.focus();
+  };
+  saveNameBtn.onclick = () => {
+    (async () => {
+      const newName = editNameInput.value.trim();
+      if (newName) {
+        await updateUserName(newName);
+      }
+      editNameInput.style.display = 'none';
+      saveNameBtn.style.display = 'none';
+      profileName.style.display = 'inline';
+      editNameBtn.style.display = 'inline-block';
+    })();
+  };
+  editNameInput.addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') {
+      saveNameBtn.click();
+    }
+  });
+}
+// 프로필 사진 변경 버튼 이벤트
+if (changeProfileBtn && profileImageInput) {
+  changeProfileBtn.onclick = () => {
+    profileImageInput.click();
+  };
+  profileImageInput.onchange = (e) => {
+    (async () => {
+      const file = e.target.files[0];
+      if (file) {
+        await uploadProfileImage(file);
+      }
+    })();
+  };
+}
 
 // UI 업데이트 함수 (외부에서 호출 가능하도록 export)
 export function updateUIforAuth(user) {
@@ -388,7 +565,7 @@ export function updateUIforAuth(user) {
     if (loginForm) loginForm.style.display = 'block';
     if (userInfo) userInfo.style.display = 'none';
     if (userEmail) userEmail.textContent = '';
-    if (profileImage) profileImage.src = 'https://via.placeholder.com/100';
+    if (profileImage) profileImage.src = 'https://www.gravatar.com/avatar/?d=mp';
   }
 }
 
