@@ -1166,3 +1166,71 @@ li.completed span {
     color: #222 !important;
   }
 }
+
+#friend-calendar-container {
+  flex: 1;
+  background-color: #aaa;
+  border-radius: 20px;
+  padding: 20px;
+  max-width: 480px;
+  margin-left: 0;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+#friend-calendar-title {
+  background-color: #f8bfbf;
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-weight: bold;
+  display: inline-block;
+  margin-top: -6px;
+  margin-bottom: 8px;
+  margin-left: 0;
+}
+#friend-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background-color: rgb(255, 234, 234);
+  border-radius: 10px;
+  overflow: hidden;
+  max-width: 440px;
+  margin-left: 0;
+  margin-right: auto;
+  border: 3px solid #f8bfbf;
+}
+#friend-calendar-grid .calendar-cell {
+  background-color: white;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding: 10px 6px 0 5px;
+  font-weight: bold;
+  font-size: 15px;
+  box-sizing: border-box;
+  height: 80px;
+}
+.friend-item {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+.delete-friend-btn {
+  min-width: 60px;
+  margin-left: auto !important;
+  display: block;
+}
+#friends-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+#back-to-plus {
+  cursor: pointer;
+}

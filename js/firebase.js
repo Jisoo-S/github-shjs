@@ -167,6 +167,10 @@ export async function login() {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     console.log("로그인 성공:", userCredential.user.email);
+    // Firestore에 사용자 정보(email) 저장
+    await setDoc(doc(db, "users", userCredential.user.uid), {
+      email: userCredential.user.email
+    }, { merge: true });
     
     // 로그인 상태 저장
     localStorage.setItem('isLoggedIn', 'true');
@@ -280,10 +284,14 @@ export async function addCalendarNoteToFirebase(noteData) {
   return addDoc(collection(db, "users", user.uid, "calendarNotes"), noteData);
 }
 
-export async function getCalendarNotesFromFirebase() {
-  const user = getCurrentUser();
-  if (!user) return Promise.reject("사용자가 로그인되어 있지 않습니다.");
-  const querySnapshot = await getDocs(collection(db, "users", user.uid, "calendarNotes"));
+export async function getCalendarNotesFromFirebase(uid) {
+  let targetUid = uid;
+  if (!targetUid) {
+    const user = getCurrentUser();
+    if (!user) return Promise.reject("사용자가 로그인되어 있지 않습니다.");
+    targetUid = user.uid;
+  }
+  const querySnapshot = await getDocs(collection(db, "users", targetUid, "calendarNotes"));
   const notes = [];
   querySnapshot.forEach((doc) => {
     notes.push({ id: doc.id, ...doc.data() });

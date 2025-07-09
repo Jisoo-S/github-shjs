@@ -1,9 +1,10 @@
 // Firebase 관련 함수 임포트
-import { getCurrentUser, getTodosFromFirebase } from './firebase.js';
+import { getCurrentUser, getTodosFromFirebase, getCalendarNotesFromFirebase, addCalendarNoteToFirebase } from './firebase.js';
 
 let currentDate = new Date();
 let calendarMode = "month";
 let todos = []; // 할 일 목록을 저장할 배열
+let isFriendCalendarMode = false;
 
 // 캘린더 뷰 초기화 함수
 async function initializeCalendar() {
@@ -24,12 +25,13 @@ function showMonthView() {
   const monthIndex = now.getMonth();
   const monthName = now.toLocaleString('default', { month: 'long' });
 
-  document.getElementById("calendar-title").textContent = monthName.toUpperCase();
+  const calendarTitleElement = getCalendarTitleElement();
+  calendarTitleElement.textContent = monthName.toUpperCase();
 
   const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
   const firstDay = new Date(year, monthIndex, 1).getDay();
 
-  const grid = document.getElementById("calendar-grid");
+  const grid = getCalendarGridElement();
   grid.style.gridTemplateColumns = "repeat(7, 1fr)";
   grid.innerHTML = "";
 
@@ -83,9 +85,10 @@ function showWeekView() {
     `${ordinal(startWeekNum)} week` : 
     `${ordinal(startWeekNum)} week / ${ordinal(endWeekNum)} week`;
 
-  document.getElementById("calendar-title").textContent = label;
+  const calendarTitleElement = getCalendarTitleElement();
+  calendarTitleElement.textContent = label;
 
-  const grid = document.getElementById("calendar-grid");
+  const grid = getCalendarGridElement();
   grid.innerHTML = "";
   grid.style.gridTemplateColumns = "repeat(7, 1fr)";
 
@@ -114,9 +117,10 @@ function showTodayView() {
 
   const today = new Date(currentDate);
   const dateStr = `${today.getMonth() + 1}/${today.getDate()}`;
-  document.getElementById("calendar-title").textContent = dateStr;
+  const calendarTitleElement = getCalendarTitleElement();
+  calendarTitleElement.textContent = dateStr;
 
-  const grid = document.getElementById("calendar-grid");
+  const grid = getCalendarGridElement();
   grid.innerHTML = "";
   grid.style.gridTemplateColumns = "1fr";
 
@@ -321,7 +325,7 @@ function createCalendarCell(date) {
   }
   
   cell.addEventListener('click', () => {
-    showMemoModal(date);
+    showMemoModal(date, isFriendCalendarMode); // 친구 달력 모드면 읽기전용
   });
   
   return cell;
@@ -369,19 +373,28 @@ function saveMemo(date, memo) {
     memos[formattedDate] = [];
   }
   if (memo) {
-    memos[formattedDate].push({
+    const memoObj = {
       id: Date.now(),
       text: memo,
       date: formattedDate
-    });
+    };
+    memos[formattedDate].push(memoObj);
+    // 파이어베이스에도 저장
+    addCalendarNoteToFirebase({ text: memo, date: formattedDate });
   }
   localStorage.setItem('calendar_memos', JSON.stringify(memos));
 }
 
 function getMemo(date) {
   const formattedDate = formatDate(date);
-  const memos = JSON.parse(localStorage.getItem('calendar_memos') || '{}');
-  return memos[formattedDate] || [];
+  if (isFriendCalendarMode) {
+    // 친구 달력 모드: todos 배열에서 해당 날짜 메모만 추출
+    return todos.filter(todo => todo.date === formattedDate);
+  } else {
+    // 내 달력: localStorage에서 메모 추출
+    const memos = JSON.parse(localStorage.getItem('calendar_memos') || '{}');
+    return memos[formattedDate] || [];
+  }
 }
 
 function deleteMemo(date, memoId) {
@@ -396,19 +409,20 @@ function deleteMemo(date, memoId) {
   }
 }
 
-function showMemoModal(date) {
+function showMemoModal(date, readonly = false) {
   const formattedDate = formatDate(date);
   const memos = getMemo(formattedDate);
   
   const modal = showCustomModal({
     title: `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`,
     message: `<div style="font-size: 12px; color: #666; margin-bottom: 15px;">메모 ${memos.length}개</div>`,
-    showInput: true,
+    showInput: !readonly,
     inputType: "text",
     inputPlaceholder: "새로운 메모를 입력하세요...",
-    confirmText: "저장",
+    confirmText: readonly ? "확인" : "저장",
     cancelText: "닫기",
     onConfirm: (value) => {
+      if (readonly) return; // 읽기전용이면 아무 동작 안함
       if (value && value.trim()) {
         saveMemo(formattedDate, value.trim());
         if (calendarMode === 'month') {
@@ -481,38 +495,41 @@ function showMemoModal(date) {
       memoText.style.fontSize = '14px';
       memoText.style.color = '#333';
 
-      const deleteBtn = document.createElement('button');
-      deleteBtn.textContent = '🗑️';
-      deleteBtn.style.border = 'none';
-      deleteBtn.style.background = 'none';
-      deleteBtn.style.cursor = 'pointer';
-      deleteBtn.style.opacity = '0.5';
-      deleteBtn.style.transition = 'opacity 0.2s';
-      deleteBtn.style.padding = '4px';
-      deleteBtn.style.borderRadius = '4px';
-      deleteBtn.onmouseover = () => {
-        deleteBtn.style.opacity = '1';
-        deleteBtn.style.backgroundColor = '#ff9f9f';
-      };
-      deleteBtn.onmouseout = () => {
+      if (!readonly) {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '🗑️';
+        deleteBtn.style.border = 'none';
+        deleteBtn.style.background = 'none';
+        deleteBtn.style.cursor = 'pointer';
         deleteBtn.style.opacity = '0.5';
-        deleteBtn.style.backgroundColor = 'transparent';
-      };
-      deleteBtn.onclick = () => {
-        deleteMemo(formattedDate, memo.id);
-        updateMemoList();
-        updateMemoCount();
-        if (calendarMode === 'month') {
-          showMonthView();
-        } else if (calendarMode === 'week') {
-          showWeekView();
-        } else if (calendarMode === 'today') {
-          showTodayView();
-        }
-      };
-
-      memoItem.appendChild(memoText);
-      memoItem.appendChild(deleteBtn);
+        deleteBtn.style.transition = 'opacity 0.2s';
+        deleteBtn.style.padding = '4px';
+        deleteBtn.style.borderRadius = '4px';
+        deleteBtn.onmouseover = () => {
+          deleteBtn.style.opacity = '1';
+          deleteBtn.style.backgroundColor = '#ff9f9f';
+        };
+        deleteBtn.onmouseout = () => {
+          deleteBtn.style.opacity = '0.5';
+          deleteBtn.style.backgroundColor = 'transparent';
+        };
+        deleteBtn.onclick = () => {
+          deleteMemo(formattedDate, memo.id);
+          updateMemoList();
+          updateMemoCount();
+          if (calendarMode === 'month') {
+            showMonthView();
+          } else if (calendarMode === 'week') {
+            showWeekView();
+          } else if (calendarMode === 'today') {
+            showTodayView();
+          }
+        };
+        memoItem.appendChild(memoText);
+        memoItem.appendChild(deleteBtn);
+      } else {
+        memoItem.appendChild(memoText);
+      }
       memoList.appendChild(memoItem);
     });
   };
@@ -547,6 +564,7 @@ function showMemoModal(date) {
       button.style.color = '#333';
       // 저장 버튼 클릭 시 모달 닫히지 않도록 수정
       button.onclick = (e) => {
+        if (readonly) return;
         e.preventDefault();
         const input = modalDiv.querySelector('input');
         if (input && input.value.trim()) {
@@ -563,9 +581,6 @@ function showMemoModal(date) {
           }
         }
       };
-    } else if (button.textContent === '닫기') {
-      button.style.backgroundColor = '#ff9f9f';
-      button.style.color = '#333';
     }
   });
 
@@ -585,6 +600,7 @@ function showMemoModal(date) {
     
     // 엔터키로 저장 (모달은 닫지 않음)
     input.addEventListener('keydown', (e) => {
+      if (readonly) return;
       if (e.key === 'Enter') {
         const value = input.value.trim();
         if (value) {
@@ -745,3 +761,34 @@ document.addEventListener("DOMContentLoaded", () => {
   // 초기 달력 표시
   initializeCalendar();
 }); 
+
+window.loadFriendCalendar = async function(friendUid) {
+  currentDate = new Date(); // 친구 달력 진입 시 현재 날짜로 초기화
+  isFriendCalendarMode = true;
+  todos = await getCalendarNotesFromFirebase(friendUid);
+  if (calendarMode === "month") showMonthView();
+  else if (calendarMode === "week") showWeekView();
+  else showTodayView();
+}; 
+
+window.initializeCalendar = async function() {
+  isFriendCalendarMode = false;
+  await initializeCalendar();
+};
+
+function getCalendarTitleElement() {
+  return isFriendCalendarMode
+    ? document.getElementById("friend-calendar-title")
+    : document.getElementById("calendar-title");
+}
+function getCalendarGridElement() {
+  return isFriendCalendarMode
+    ? document.getElementById("friend-calendar-grid")
+    : document.getElementById("calendar-grid");
+} 
+
+window.goPrev = goPrev;
+window.goNext = goNext;
+window.showMonthView = showMonthView;
+window.showWeekView = showWeekView;
+window.showTodayView = showTodayView; 

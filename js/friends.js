@@ -279,12 +279,18 @@ async function renderFriendsList() {
     const displayName = (latestName && latestName.trim() !== "") ? latestName : "이름없음";
     const email = friend.email || "";
     li.innerHTML = `
-      <img src="${profileUrl}" style="width:40px; height:40px; border-radius:50%; vertical-align:middle;" onerror="this.onerror=null;this.src='https://www.gravatar.com/avatar/?d=mp';">
-      <span style="margin-left:10px; font-weight:bold;">${displayName}</span>
-      <span style="margin-left:8px; color:#888; font-size:13px;">${email}</span>
-      <br>
-      <button class="delete-friend-btn" style="margin-top:6px; background:#ffb3b3; color:#fff; border:none; border-radius:8px; padding:2px 10px; cursor:pointer; font-size:13px;">삭제</button>
+      <div style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; gap: 2px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <img src="${profileUrl}" style="width:40px; height:40px; border-radius:50%; vertical-align:middle; cursor:pointer;" onerror="this.onerror=null;this.src='https://www.gravatar.com/avatar/?d=mp';">
+          <span style="font-weight:bold; cursor:pointer; white-space:nowrap;">${displayName}</span>
+          <button class="delete-friend-btn" style="background:#ffb3b3; color:#fff; border:none; border-radius:8px; padding:2px 10px; cursor:pointer; font-size:13px; min-width:60px;">삭제</button>
+        </div>
+        <span style="color:#888; font-size:13px; white-space:nowrap; margin-left:50px;">${email}</span>
+      </div>
     `;
+    // 프로필 이미지/이름 클릭 시 친구 달력 뷰로 이동
+    li.querySelector('img').addEventListener('click', () => window.showFriendCalendar(friend));
+    li.querySelector('span').addEventListener('click', () => window.showFriendCalendar(friend));
     // 삭제 버튼 이벤트 연결
     const deleteBtn = li.querySelector('.delete-friend-btn');
     deleteBtn.addEventListener('click', async () => {
@@ -355,3 +361,33 @@ async function updateRequestBadge() {
 // 최초 1회, 그리고 친구목록 갱신 시마다 호출
 updateRequestBadge();
 window.updateRequestBadge = updateRequestBadge; 
+
+// 친구 달력 뷰로 전환 및 데이터 로드
+window.showFriendCalendar = async function(friend) {
+  document.getElementById('user-info').style.display = 'none';
+  document.getElementById('friend-home').style.display = 'block';
+  // Firestore에서 최신 이름을 가져와서 표시
+  let displayName = friend.name;
+  try {
+    const docSnap = await getDoc(doc(db, "users", friend.uid));
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      if (data.name && data.name.trim() !== "") displayName = data.name;
+    }
+  } catch (e) {}
+  document.getElementById('friend-name').textContent = (displayName && displayName.trim() !== "") ? displayName : (friend.email || '친구');
+  if (window.loadFriendCalendar) {
+    await window.loadFriendCalendar(friend.uid);
+  }
+}; 
+
+document.addEventListener('DOMContentLoaded', () => {
+  const backBtn = document.getElementById('back-to-plus');
+  if (backBtn) {
+    backBtn.onclick = function() {
+      document.getElementById('friend-home').style.display = 'none';
+      document.getElementById('user-info').style.display = 'block';
+      if (window.initializeCalendar) window.initializeCalendar();
+    };
+  }
+}); 
